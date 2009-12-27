@@ -22,6 +22,7 @@ struct
           add_trace lts (get_dest (hd (get_transition lts s h))) t
     | add_trace lts s ((h,SOME Star)::t) =
         add_trace (add_transition lts (s,h,s)) s t (* Add a self-loop with label h *)
+    | add_trace _ _ _ = raise Fail "Unhandled case in SpecBuilder.add_trace"
      
   fun buildLTS_h [] lts = lts
     | buildLTS_h (h::t) lts = 
