@@ -8,7 +8,8 @@ struct
 		()
 	end
 
-  fun lml (smlfile) = 
+  fun lml "-tests" = ML2PP0Tests.run_all_tests() 
+   | lml (smlfile) = 
     let 
 	    val (ast,c) = Types.stype (Parse.parse smlfile)
 		val ast' = Optimiser.runAllPasses ast

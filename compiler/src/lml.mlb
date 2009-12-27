@@ -21,5 +21,10 @@ types/behav.sml
 optimiser/optimiser.sig
 optimiser/optimiser.sml
 optimiser/constfold.sml
+tests/test.sml
 codegen/codegen.sml
+tests/codegen_tests.sml
+tests/optimiser_tests.sml
+tests/parse_tests.sml
+tests/ml2pp0_tests.sml
 lml.sml
