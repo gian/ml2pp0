@@ -7,6 +7,6 @@ sig
 	
 	val addPass : optimiser_pass -> unit
 	val removePass : string -> unit
-	val runPass : optimiser_pass * typed ast -> typed ast 
-	val runAllPasses : typed ast -> typed ast
+	val runPass : optimiser_pass * typed ast list -> typed ast list
+	val runAllPasses : typed ast list -> typed ast list
 end

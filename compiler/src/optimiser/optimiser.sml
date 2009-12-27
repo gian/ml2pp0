@@ -3,7 +3,7 @@ struct
     type typed = TypedAST.typed
     type 'a ast = 'a TypedAST.ast
 
-    type optimiser_pass = string * (typed ast -> typed ast)
+    type optimiser_pass = string * (typed ast list -> typed ast list)
   
 	val passes = ref [] : optimiser_pass list ref
 
