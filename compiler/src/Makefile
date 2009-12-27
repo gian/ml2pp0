@@ -17,8 +17,12 @@ SOURCES =			\
 
 
 .PHONY: all $(SOURCES)
-all: $(BIN)/ml2pp0
+all: $(BIN)/ml2pp0 $(BIN)
 .PHONY: clean
+
+$(BIN):
+	mkdir -p $(BIN)
+
 clean:
 	../../bin/clean
 
