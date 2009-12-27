@@ -2,21 +2,16 @@ BIN = ../bin
 
 SOURCES =			\
 	frontend/*.sml	\
-	frontend/*.sig	\
 	trace/*.sml	\
-	trace/*.sig	\
-	types/*.sig	\
 	types/*.sml	\
 	lib/*.sml	\
-	lib/*.sig	\
 	spec/*.sml	\
-	spec/*.sig	\
 	debug.sml	\
 	lml.sml		\
 	lml.mlb
 
 
-.PHONY: all $(SOURCES)
+.PHONY: all 
 all: $(BIN)/ml2pp0 
 .PHONY: clean
 
