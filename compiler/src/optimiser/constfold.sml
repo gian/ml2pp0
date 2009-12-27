@@ -29,9 +29,15 @@ fun mapAst f (Leaf a) = f (Leaf a)
 
 fun mapForest f forest = map (mapAst f) forest
 
-fun optConstFold tast = mapForest constFold tast
+fun debugTransform xfrm node = 
+	let 
+		val result = xfrm node 
+	in 
+		Debug.print_dbg ((pptypedast_h node) ^ " => " ^ (pptypedast_h result) ^ "\n");
+		result
+	end
+	
 
-
-
+fun optConstFold tast = mapForest (debugTransform constFold)  tast
 
 end
