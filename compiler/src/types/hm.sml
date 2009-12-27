@@ -89,8 +89,8 @@ struct
        end
      | instTerm x constr = (x,constr)
  
-   and constrain_e (Integer _) = (T.Leaf (T.Integer,TyName "int"), TyName "int", [])
-     | constrain_e (String _) = (T.Leaf (T.String,TyName "string"), TyName "string", [])
+   and constrain_e (Integer p) = (T.Leaf (T.Integer p,TyName "int"), TyName "int", [])
+     | constrain_e (String p) = (T.Leaf (T.String p,TyName "string"), TyName "string", [])
      | constrain_e (AnonFn []) = raise (Fail "Empty function clause")
      | constrain_e (AnonFn (((Var (e1,_)),e2)::t)) = 
        let

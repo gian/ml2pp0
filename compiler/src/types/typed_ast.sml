@@ -7,9 +7,9 @@ struct
                    | Leaf of 'a
 
    datatype oper =
-      Integer 
-   |  String
-   |  AnonFn
+      Integer of int 
+   |  String of string
+   |  AnonFn 
    |  Nil
    |  Unit
    |  Var of string
@@ -63,8 +63,8 @@ struct
          Node ((v,substinty tyS tyR tyO), map (substinTypedAst tyS tyR) ch)
 
    (* Pretty Debug.print_dbg code follows *)
-   fun pptypednode Integer = "Integer"
-     | pptypednode String = "String"
+   fun pptypednode (Integer x) = Int.toString x
+     | pptypednode (String s) = "\"" ^ s ^ "\""
      | pptypednode AnonFn = "AnonFn"
      | pptypednode Nil = "Nil"
      | pptypednode Unit = "Unit"
@@ -83,8 +83,8 @@ struct
      | pptypednode Boolean = "Boolean"
      | pptypednode (ValBinding s) = "ValBinding " ^ s
 
-   fun pptypedast_h (Leaf (Integer,_)) = "<integer>"
-     | pptypedast_h (Leaf (String,_)) = "<string>"
+   fun pptypedast_h (Leaf (Integer x,_)) = Int.toString x
+     | pptypedast_h (Leaf (String x,_)) = "\"" ^ x ^ "\""
      | pptypedast_h (Leaf (Nil,_)) = "nil"
      | pptypedast_h (Leaf (Unit,_)) = "()"
      | pptypedast_h (Leaf (Var s,t)) = "<var " ^ s ^ "> : " ^ Absyn.ppty t
