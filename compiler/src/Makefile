@@ -1,11 +1,13 @@
 BIN = ../bin
 
 SOURCES =			\
+	frontend/lml.lex.sml \
 	frontend/*.sml	\
 	trace/*.sml	\
 	types/*.sml	\
 	lib/*.sml	\
 	spec/*.sml	\
+	optimiser/*.sml	\
 	debug.sml	\
 	lml.sml		\
 	lml.mlb

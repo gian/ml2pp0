@@ -3,6 +3,7 @@ struct
   fun initialise () =
   	let
 		val _ = Optimiser.addPass ("nullOpt", fn x => x)
+		val _ = Optimiser.addPass ("constFold", ConstFold.optConstFold)
 	in
 		()
 	end

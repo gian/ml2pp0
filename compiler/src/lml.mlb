@@ -20,5 +20,6 @@ frontend/parse.sml
 types/behav.sml
 optimiser/optimiser.sig
 optimiser/optimiser.sml
+optimiser/constfold.sml
 codegen/codegen.sml
 lml.sml
