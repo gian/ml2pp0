@@ -18,4 +18,7 @@ trace/specl.lex.sml
 trace/parsespec.sml
 frontend/parse.sml
 types/behav.sml
+optimiser/optimiser.sig
+optimiser/optimiser.sml
+codegen/codegen.sml
 lml.sml
