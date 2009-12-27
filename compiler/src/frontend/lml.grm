@@ -1,0 +1,184 @@
+(* LML - "Little ML" *)
+(* This is a really crude grammar for a subset of SML97 *)
+(* Copyright (c) 2008 Gian Perrone *)
+(* gdp3 at cs.waikato.ac.nz *)
+
+(* TODO: Add records *)
+
+structure A = Absyn
+
+(* Construct a value binding with an anonymous function *)
+fun mkFun (id,e1,e2,el) = A.ValBinding ((id,NONE), A.AnonFn ((e1,e2) :: el))
+
+%%
+
+%name Lml
+
+%term VAL
+    | STRUCT
+    | STRUCTURE
+    | SIG
+    | SIGNATURE
+    | IF
+    | THEN
+    | ELSE
+    | NIL
+    | FUN
+    | DATATYPE
+    | TRUE
+    | FALSE
+    | OF
+    | TYPE
+    | LET
+    | IN
+    | END
+    | LINT of int 
+    | LREAL of real
+    | BTYPESTART
+    | BTYPEEND
+    | BTYPERECV
+    | BANG
+    | BTYPECOMP
+    | BTYPECHOICE
+    | ASCRIBEO
+    | PLUS
+    | MINUS
+    | TIMES
+    | DIVIDE
+    | EQUALS
+    | NEQ
+    | FNASSIGN
+    | MUTASSIGN
+    | ARROW
+    | LTEQ
+    | GTEQ
+    | LT
+    | GT
+    | FN
+    | BAND
+    | BOR
+    | BNOT
+    | UMINUS
+    | CLAUSE
+    | TYPEDELIM
+    | IDENT of string
+    | LPAR
+    | RPAR
+    | LBR
+    | RBR
+    | LSQ
+    | RSQ
+    | CONS
+    | COMMA
+    | SEMI
+    | LSTR of string
+    | ERROR
+    | EOF
+	  
+%nonterm prog of A.stm list
+   |	 stmlist of A.stm list
+   |	 idwithtype of A.identifier
+   |	 stm of A.stm
+   |	 funstm of A.stm 
+   |	 funclause of (A.expr * A.expr) list
+   |     anonfnclause of (A.expr * A.expr) list
+   |     anonfnexpr of A.expr
+   |     dtclauses of (string * A.ty option) list
+   |     dtclause of string * A.ty option
+   |     datatypestm of A.stm
+   |	 expr of A.expr 
+   |     tupleexpr of A.expr list 
+   | 	 typeexpr of A.ty 
+   |	 behavty of A.behavty
+
+%pos int
+%verbose
+%start prog
+%eop EOF %noshift EOF
+
+%%
+
+prog: stmlist						(stmlist)
+
+stmlist:	stm					([stm])
+  |	stm stmlist					(stm :: stmlist)
+  |	EOF						([])
+
+idwithtype:	IDENT TYPEDELIM typeexpr		((IDENT,SOME typeexpr))
+  |		IDENT					((IDENT,NONE))
+
+stm:	STRUCTURE IDENT EQUALS STRUCT stmlist END	(A.StructBinding(IDENT,stmlist))
+  |	SIGNATURE IDENT EQUALS SIG stmlist END		(A.SigBinding(IDENT,stmlist))
+  |	VAL idwithtype EQUALS expr			(A.ValBinding(idwithtype,expr))
+  |	TYPE IDENT EQUALS typeexpr			(A.TyBinding(IDENT,typeexpr))
+  |	funstm						(funstm)
+  |	datatypestm					(datatypestm)
+
+funstm:	FUN IDENT expr EQUALS expr funclause		(mkFun (IDENT, expr1, expr2, funclause))
+
+funclause:	CLAUSE IDENT expr EQUALS expr funclause	((expr1,expr2) :: funclause)
+  |							([])
+
+datatypestm:	DATATYPE IDENT EQUALS dtclauses		(A.DatatypeBinding(IDENT,dtclauses))
+
+dtclauses:	dtclause CLAUSE dtclauses		(dtclause :: dtclauses)
+  |		dtclause				([dtclause])
+
+dtclause:	IDENT OF typeexpr			((IDENT,SOME typeexpr))
+  |		IDENT					((IDENT,NONE))
+
+anonfnclause:	CLAUSE expr EQUALS expr anonfnclause	((expr1,expr2) :: anonfnclause)
+  |							([])
+
+anonfnexpr: FN expr FNASSIGN expr anonfnclause		(A.AnonFn((expr1,expr2) :: anonfnclause))
+
+expr:	LINT						(A.Integer LINT)
+  |	LSTR						(A.String LSTR)
+  |	NIL						(A.Nil)
+  |	anonfnexpr					(anonfnexpr)
+  |	IDENT						(A.Var (IDENT,NONE))
+  |	BANG expr					(A.Deref expr)
+  |	UMINUS expr					(A.UMinus expr)
+  |     expr CONS expr                                  (A.BinOp (expr1,A.Cons,expr2))
+  |	expr PLUS expr					(A.BinOp (expr1,A.Plus,expr2))
+  |     expr MINUS expr					(A.BinOp (expr1,A.Minus,expr2))
+  |     expr TIMES expr					(A.BinOp (expr1,A.Times,expr2))
+  |     expr DIVIDE expr				(A.BinOp (expr1,A.Divide,expr2))
+  |     expr EQUALS expr				(A.BinOp (expr1,A.Eq,expr2))
+  |     expr LTEQ expr					(A.BinOp (expr1,A.LtEq,expr2))
+  |     expr GTEQ expr					(A.BinOp (expr1,A.GtEq,expr2))
+  |     expr LT expr					(A.BinOp (expr1,A.Lt,expr2))
+  |     expr GT expr					(A.BinOp (expr1,A.Gt,expr2))
+  |     expr NEQ expr					(A.BinOp (expr1,A.NEq,expr2))
+  |	expr MUTASSIGN expr				(A.BinOp (expr1,A.Assign,expr2))
+  |     TRUE						(A.True)
+  |     FALSE						(A.False)
+  |     BNOT expr					(A.BNot expr)
+  |	LPAR expr RPAR					(expr)
+  |     IF expr THEN expr ELSE expr			(A.If (expr1,expr2,expr3))
+  |     LET IDENT EQUALS expr IN expr	        	(A.Let (IDENT,expr1,expr2))
+  |     expr SEMI expr					(A.Seq (expr1,expr2))
+  |	expr TYPEDELIM typeexpr				(A.TypeAnnotation(expr,typeexpr))
+  |     LPAR RPAR					(A.Unit)
+  |	LPAR tupleexpr	RPAR				(A.Tuple tupleexpr)
+  |     LSQ RSQ						(A.Nil)
+  |	LSQ tupleexpr RSQ				(A.List tupleexpr)
+  |	expr expr					(A.App (expr1,expr2))
+
+tupleexpr: expr COMMA tupleexpr				(expr :: tupleexpr)
+  |        expr COMMA expr				(expr1 :: expr2 :: nil)
+
+typeexpr: typeexpr typeexpr				(A.TyCon(typeexpr1,typeexpr2))
+  |	  LPAR typeexpr RPAR				(typeexpr)
+  |	  IDENT						(A.TyName IDENT)
+  |	  typeexpr ARROW typeexpr			(A.TyArrow (typeexpr1, typeexpr2))
+  |	  typeexpr TIMES typeexpr			(A.TyTup(typeexpr1, typeexpr2))
+  |       typeexpr BTYPESTART behavty BTYPEEND typeexpr	(A.TyArrow(typeexpr1,typeexpr2))
+
+behavty: idwithtype					(A.BTIdentifier idwithtype)
+  |	 behavty BTYPECHOICE behavty			(A.BTChoice (behavty1,behavty2))
+  |	 behavty BTYPECOMP behavty			(A.BTCompose (behavty1,behavty2))
+  |	 behavty BANG typeexpr 				(A.BTSend (behavty, SOME typeexpr))
+  |	 behavty BTYPERECV typeexpr			(A.BTRecv (behavty, SOME typeexpr))
+  |	 behavty ARROW behavty				(A.BTSeq (behavty1,behavty2))
+  |	 LPAR behavty RPAR				(behavty)

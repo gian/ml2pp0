@@ -1,0 +1,6 @@
+
+
+fun main x = let v = insertCoin () in (if true then ((button1 ());(takeDrink1 ())) else ((button2 ());(takeDrink2 ()))) 
+
+val _ = main ()
+

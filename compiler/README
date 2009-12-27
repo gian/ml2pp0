@@ -1,0 +1,12 @@
+You will need MLton (http://www.mlton.org) installed in order to compile this project.  Running 'make' in the src/ directory should be sufficient to build the 'lml' binary.
+
+Usage:
+
+lml <lml-file> <spec-file>
+
+There are small examples in the doc/examples directory, with more coming soon, I hope.
+
+Gian Perrone
+20 Aug 2009
+http://plsadventures.blogspot.com
+

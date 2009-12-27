@@ -1,0 +1,9 @@
+fun incorrectReadFile filename =
+  let fp = open filename
+  in let content = read fp
+  in
+     if feof fp then ((close fp); []) else content :: (incorrectReadFile filename)
+
+val _ = incorrectReadFile "foo"
+
+

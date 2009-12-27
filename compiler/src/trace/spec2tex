@@ -1,0 +1,8 @@
+#!/bin/sh
+
+export SMLNJ_HOME=/research/smlnj
+
+echo "Spec.spec2tex (ParseSpec.parse \"$1\") \"$1.tex\";" | sml sources.cm
+
+pdflatex $1.tex && evince $1.pdf
+

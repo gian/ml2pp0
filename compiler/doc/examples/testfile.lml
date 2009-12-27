@@ -1,0 +1,30 @@
+val btypetest = read
+
+fun btypetest2 x = read x
+
+val id = let z = (fn x => x) in z
+
+val double = let f = fn x => fn y => x (x y) in f
+
+fun f x = 10
+
+val p = id "hello"
+
+val k = id 123
+
+val zzz = 1 :: id 2 :: 3 :: [] 
+
+val fooo = if k = 1 then 0 else 1
+
+fun fib x = if x = 0 then 1 else if x = 1 then 1 else fib(x-1) + fib(x-2)
+
+val zpsd = let f = open "foobar" in ((print (read f)); (close f))
+
+fun boo x = x + boo (x)
+
+fun readAll fp = 
+    let
+       k = read fp 
+    in
+       if feof fp then (k :: nil) else (k :: (readAll fp))
+       

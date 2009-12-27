@@ -1,0 +1,9 @@
+fun readAll fx = if feof fx then [] else (read fx) :: (readAll fx)
+
+fun readFile filename =
+  let fp = open filename in
+  let content = readAll fp in
+  let x = close fp in content
+
+val k = readFile "foobar"
+ 

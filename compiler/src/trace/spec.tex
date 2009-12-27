@@ -1,0 +1,25 @@
+\documentclass[a4paper]{article}
+\usepackage{fancyvrb}
+
+\begin{document}
+
+\begin{figure}[T]
+\begin{Verbatim}[frame=single,label={Operations},framesep=5mm,labelposition=topline]
+open
+read
+close
+\end{Verbatim}
+\begin{Verbatim}[frame=single,label={Necessary},framesep=5mm,labelposition=topline]
+0 --open--> 1
+\end{Verbatim}
+\begin{Verbatim}[frame=single,label={Safe},framesep=5mm,labelposition=topline]
+0 --open--> 2
+\end{Verbatim}
+\begin{Verbatim}[frame=single,label={Forbidden},framesep=5mm,labelposition=topline]
+read, open
+close, \_*
+\end{Verbatim}
+\end{figure}
+
+\end{document}
+

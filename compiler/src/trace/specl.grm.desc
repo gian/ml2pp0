@@ -1,0 +1,314 @@
+3 reduce/reduce conflicts
+non-shiftable terminal used on the rhs of 0 rules
+
+warning: non-shiftable terminal EOFappears on the rhs of <spec : OPERATIONS opsection NECESSARY section SAFE traces FORBIDDEN traces EOF >
+error:  state 12: reduce/reduce conflict between rule 10 and rule 8 on EOF
+error:  state 12: reduce/reduce conflict between rule 10 and rule 8 on FORBIDDEN
+error:  state 12: reduce/reduce conflict between rule 10 and rule 8 on SAFE
+
+state 0:
+
+	spec : . OPERATIONS opsection NECESSARY section SAFE traces FORBIDDEN traces EOF 
+
+	OPERATIONS	shift 1
+
+	spec	goto 26
+
+	.	error
+
+
+state 1:
+
+	spec : OPERATIONS . opsection NECESSARY section SAFE traces FORBIDDEN traces EOF 
+
+	WILDCARD	shift 5
+	ACTION	shift 4
+
+	opsection	goto 3
+	action	goto 2
+
+	.	error
+
+
+state 2:
+
+	opsection : action .  (reduce by rule 5)
+	opsection : action . opsection 
+
+	WILDCARD	shift 5
+	ACTION	shift 4
+
+	opsection	goto 6
+	action	goto 2
+
+	.	reduce by rule 5
+
+
+state 3:
+
+	spec : OPERATIONS opsection . NECESSARY section SAFE traces FORBIDDEN traces EOF 
+
+	NECESSARY	shift 7
+
+
+	.	error
+
+
+state 4:
+
+	action : ACTION .  (reduce by rule 1)
+	action : ACTION . WRITE ACTION 
+	action : ACTION . READ ACTION 
+
+	WRITE	shift 9
+	READ	shift 8
+
+
+	.	reduce by rule 1
+
+
+state 5:
+
+	action : WILDCARD .  (reduce by rule 4)
+
+
+
+	.	reduce by rule 4
+
+
+state 6:
+
+	opsection : action opsection .  (reduce by rule 6)
+
+
+
+	.	reduce by rule 6
+
+
+state 7:
+
+	spec : OPERATIONS opsection NECESSARY . section SAFE traces FORBIDDEN traces EOF 
+
+	WILDCARD	shift 5
+	ACTION	shift 4
+
+	section	goto 14
+	traces	goto 13
+	trace	goto 12
+	traceel	goto 11
+	action	goto 10
+
+	.	reduce by rule 10
+
+
+state 8:
+
+	action : ACTION READ . ACTION 
+
+	ACTION	shift 15
+
+
+	.	error
+
+
+state 9:
+
+	action : ACTION WRITE . ACTION 
+
+	ACTION	shift 16
+
+
+	.	error
+
+
+state 10:
+
+	traceel : action . STAR 
+	traceel : action .  (reduce by rule 14)
+
+	STAR	shift 17
+
+
+	.	reduce by rule 14
+
+
+state 11:
+
+	trace : traceel .  (reduce by rule 11)
+	trace : traceel . COMMA trace 
+
+	COMMA	shift 18
+
+
+	.	reduce by rule 11
+
+error:  state 12: reduce/reduce conflict between rule 10 and rule 8 on EOF
+error:  state 12: reduce/reduce conflict between rule 10 and rule 8 on FORBIDDEN
+error:  state 12: reduce/reduce conflict between rule 10 and rule 8 on SAFE
+
+state 12:
+
+	traces : trace .  (reduce by rule 8)
+	traces : trace . traces 
+
+	SAFE	reduce by rule 8
+	FORBIDDEN	reduce by rule 8
+	WILDCARD	shift 5
+	ACTION	shift 4
+	EOF	reduce by rule 8
+
+	traces	goto 19
+	trace	goto 12
+	traceel	goto 11
+	action	goto 10
+
+	.	error
+
+
+state 13:
+
+	section : traces .  (reduce by rule 7)
+
+
+
+	.	reduce by rule 7
+
+
+state 14:
+
+	spec : OPERATIONS opsection NECESSARY section . SAFE traces FORBIDDEN traces EOF 
+
+	SAFE	shift 20
+
+
+	.	error
+
+
+state 15:
+
+	action : ACTION READ ACTION .  (reduce by rule 3)
+
+
+
+	.	reduce by rule 3
+
+
+state 16:
+
+	action : ACTION WRITE ACTION .  (reduce by rule 2)
+
+
+
+	.	reduce by rule 2
+
+
+state 17:
+
+	traceel : action STAR .  (reduce by rule 13)
+
+
+
+	.	reduce by rule 13
+
+
+state 18:
+
+	trace : traceel COMMA . trace 
+
+	WILDCARD	shift 5
+	ACTION	shift 4
+
+	trace	goto 21
+	traceel	goto 11
+	action	goto 10
+
+	.	error
+
+
+state 19:
+
+	traces : trace traces .  (reduce by rule 9)
+
+
+
+	.	reduce by rule 9
+
+
+state 20:
+
+	spec : OPERATIONS opsection NECESSARY section SAFE . traces FORBIDDEN traces EOF 
+
+	WILDCARD	shift 5
+	ACTION	shift 4
+
+	traces	goto 22
+	trace	goto 12
+	traceel	goto 11
+	action	goto 10
+
+	.	reduce by rule 10
+
+
+state 21:
+
+	trace : traceel COMMA trace .  (reduce by rule 12)
+
+
+
+	.	reduce by rule 12
+
+
+state 22:
+
+	spec : OPERATIONS opsection NECESSARY section SAFE traces . FORBIDDEN traces EOF 
+
+	FORBIDDEN	shift 23
+
+
+	.	error
+
+
+state 23:
+
+	spec : OPERATIONS opsection NECESSARY section SAFE traces FORBIDDEN . traces EOF 
+
+	WILDCARD	shift 5
+	ACTION	shift 4
+
+	traces	goto 24
+	trace	goto 12
+	traceel	goto 11
+	action	goto 10
+
+	.	reduce by rule 10
+
+
+state 24:
+
+	spec : OPERATIONS opsection NECESSARY section SAFE traces FORBIDDEN traces . EOF 
+
+	EOF	shift 25
+
+
+	.	error
+
+
+state 25:
+
+	spec : OPERATIONS opsection NECESSARY section SAFE traces FORBIDDEN traces EOF .  (reduce by rule 0)
+
+
+
+	.	reduce by rule 0
+
+
+state 26:
+
+
+	EOF	accept
+
+
+	.	error
+
+23 of 56 action table entries left after compaction
+25 goto table entries

@@ -1,0 +1,13 @@
+val fx = open "foo"
+
+fun readAll fp =
+    let
+       k = read fp
+    in
+       if feof fp then (k :: nil) else (k :: (readAll fp))
+
+val z = readAll fx
+
+val _ = close fx 
+
+

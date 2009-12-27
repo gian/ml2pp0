@@ -1,0 +1,62 @@
+(* Specl - Little Specification Language *)
+(* Copyright (c) 2008 Gian Perrone *)
+(* gdp3 at cs.waikato.ac.nz *)
+
+structure S = Spec
+
+%%
+
+%name Specl
+
+%term OPERATIONS
+    | NECESSARY
+    | SAFE
+    | FORBIDDEN
+    | COMMA
+    | WRITE
+    | READ
+    | WILDCARD
+    | STAR
+    | ACTION of string 
+    | ERROR
+    | EOF
+	  
+%nonterm spec of S.spec
+   |     opsection of S.action list
+   |	 section of S.action  SpecBuilder.trace_element SpecBuilder.trace list
+   |     fsection of S.action SpecBuilder.trace list
+   |     traces of S.action SpecBuilder.trace_element SpecBuilder.trace list
+   |	 trace of S.action SpecBuilder.trace_element SpecBuilder.trace
+   |     traceel of S.action SpecBuilder.trace_element
+   |     action of S.action
+
+%pos int
+%verbose
+%start spec
+%eop EOF %noshift EOF
+
+%%
+
+spec: OPERATIONS opsection NECESSARY section SAFE traces FORBIDDEN traces EOF ({operations=opsection,necessary=section1,safe=traces1,forbidden=traces2})
+
+action : ACTION						(S.Label ACTION)
+       | ACTION WRITE ACTION				(S.Write (ACTION1,ACTION2))
+       | ACTION READ ACTION				(S.Read (ACTION1,ACTION2))
+       | WILDCARD					(S.Wildcard)
+
+
+opsection : action					([action])
+          | action opsection				(action :: opsection)
+
+section : traces					(traces)
+
+traces : trace						([trace])
+       | trace traces					(trace :: traces)
+       |						([])
+
+trace : traceel						([traceel])
+      | traceel COMMA trace				(traceel :: trace)
+
+traceel : action STAR					((action,SOME SpecBuilder.Star))
+        | action					((action,NONE))
+

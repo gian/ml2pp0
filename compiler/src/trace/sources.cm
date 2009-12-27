@@ -1,0 +1,10 @@
+Group is
+        spec.sml
+        lts.sml
+        specbuilder.sml
+        specl.grm	
+        specl.lex
+        parsespec.sml
+	$/smlnj-lib.cm
+	$/ml-yacc-lib.cm
+	$/basis.cm	

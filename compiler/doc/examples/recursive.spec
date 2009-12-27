@@ -1,0 +1,11 @@
+OPERATIONS
+print
+open
+
+NECESSARY
+
+SAFE
+print*
+
+FORBIDDEN
+
