@@ -33,7 +33,10 @@ fun debugTransform xfrm node =
 	let 
 		val result = xfrm node 
 	in 
-		Debug.print_dbg ((pptypedast_h node) ^ " => " ^ (pptypedast_h result) ^ "\n");
+		if node <> result then
+			Debug.print_dbg ((pptypedast_h node) ^ " => " ^ (pptypedast_h result) ^ "\n")
+		else
+			();
 		result
 	end
 	
