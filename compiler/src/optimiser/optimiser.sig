@@ -1,4 +1,12 @@
 signature OPTIMISER =
 sig
-	val optimise : TypedAST.typed TypedAST.ast -> TypedAST.typed TypedAST.ast 
+	type typed
+	type 'a ast
+
+	type optimiser_pass
+	
+	val addPass : optimiser_pass -> unit
+	val removePass : string -> unit
+	val runPass : optimiser_pass * typed ast -> typed ast 
+	val runAllPasses : typed ast -> typed ast
 end
