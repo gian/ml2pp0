@@ -139,6 +139,22 @@ struct
        in
           (T.Node ((T.BinOp Minus,TyName "int"), [a1, a2]),TyName "int", newconstr @ c1 @ c2)
        end
+     | constrain_e (BinOp (e1, Times, e2)) =
+       let
+          val (a1,t1,c1) = constrain_e e1
+          val (a2,t2,c2) = constrain_e e2
+          val newconstr = [(t1,TyName "int"), (t2, TyName "int")]
+       in
+          (T.Node ((T.BinOp Times,TyName "int"), [a1, a2]),TyName "int", newconstr @ c1 @ c2)
+       end
+     | constrain_e (BinOp (e1, Divide, e2)) =
+       let
+          val (a1,t1,c1) = constrain_e e1
+          val (a2,t2,c2) = constrain_e e2
+          val newconstr = [(t1,TyName "int"), (t2, TyName "int")]
+       in
+          (T.Node ((T.BinOp Divide,TyName "int"), [a1, a2]),TyName "int", newconstr @ c1 @ c2)
+       end
      | constrain_e (BinOp (e1, Cons, e2)) =
        let
           val (a1,t1,c1) = constrain_e e1
