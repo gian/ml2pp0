@@ -1,9 +1,9 @@
-type int = Int.int
-functor LmlLexFun(structure Tokens : Lml_TOKENS)=
+(*#line 15.10 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex"*)functor LmlLexFun(structure Tokens : Lml_TOKENS)(*#line 1.1 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex.sml"*)
+=
    struct
     structure UserDeclarations =
       struct
-type pos = int
+(*#line 1.1 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex"*)type pos = int
 type svalue = Tokens.svalue
 type ('a,'b) token = ('a,'b) Tokens.token
 type lexresult = (svalue,pos) token
@@ -16,6 +16,7 @@ fun someOrFail (SOME x) = x
 val tliteral = ref ""
 val tlstart = ref 0
 
+(*#line 19.1 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex.sml"*)
 end (* end of user routines *)
 exception LexError (* raised if illegal leaf action tried *)
 structure Internal =
@@ -877,7 +878,7 @@ val s = [
 fun f x = x 
 val s = map f (rev (tl (rev s))) 
 exception LexHackingError 
-fun look ((j,x)::r, i) = if i = j then x else look(r, i) 
+fun look ((j,x)::r, i: int) = if i = j then x else look(r, i) 
   | look ([], i) = raise LexHackingError
 fun g {fin=x, trans=i} = {fin=x, trans=look(s,i)} 
 in Vector.fromList(map g 
@@ -1054,132 +1055,201 @@ type result = UserDeclarations.lexresult
 	exception LexerError (* raised if illegal leaf action tried *)
 end
 
-type int = Int.int
-fun makeLexer (yyinput: int -> string) =
-let	val yygone0:int= ~1
+structure YYPosInt : INTEGER = Int
+fun makeLexer yyinput =
+let	val yygone0= YYPosInt.fromInt ~1
 	val yyb = ref "\n" 		(* buffer *)
-	val yybl: int ref = ref 1		(*buffer length *)
-	val yybufpos: int ref = ref 1		(* location of next character to use *)
-	val yygone: int ref = ref yygone0	(* position in file of beginning of buffer *)
+	val yybl = ref 1		(*buffer length *)
+	val yybufpos = ref 1		(* location of next character to use *)
+	val yygone = ref yygone0	(* position in file of beginning of buffer *)
 	val yydone = ref false		(* eof found yet? *)
-	val yybegin: int ref = ref 1		(*Current 'start state' for lexer *)
+	val yybegin = ref 1		(*Current 'start state' for lexer *)
 
 	val YYBEGIN = fn (Internal.StartStates.STARTSTATE x) =>
 		 yybegin := x
 
 fun lex () : Internal.result =
 let fun continue() = lex() in
-  let fun scan (s,AcceptingLeaves : Internal.yyfinstate list list,l,i0: int) =
-	let fun action (i: int,nil) = raise LexError
+  let fun scan (s,AcceptingLeaves : Internal.yyfinstate list list,l,i0) =
+	let fun action (i,nil) = raise LexError
 	| action (i,nil::l) = action (i-1,l)
 	| action (i,(node::acts)::l) =
 		case node of
 		    Internal.N yyk => 
-			(let fun yymktext() = String.substring(!yyb,i0,i-i0)
-			     val yypos: int = i0+ !yygone
+			(let fun yymktext() = substring(!yyb,i0,i-i0)
+			     val yypos = YYPosInt.+(YYPosInt.fromInt i0, !yygone)
 			open UserDeclarations Internal.StartStates
  in (yybufpos := i; case yyk of 
 
 			(* Application actions *)
 
-  1 => (YYBEGIN LML; continue())
-| 100 => (Tokens.FALSE(yypos,yypos+5))
-| 103 => let val yytext=yymktext() in Tokens.LINT(someOrFail(Int.fromString yytext),yypos,yypos+size yytext) end
-| 112 => let val yytext=yymktext() in Tokens.LREAL(someOrFail(Real.fromString yytext),yypos,yypos+size yytext) end
-| 114 => (YYBEGIN STRINGLIT; tlstart := yypos; tliteral := ""; continue())
-| 117 => (Tokens.BTYPESTART(yypos,yypos+2))
-| 119 => (Tokens.BTYPERECV(yypos,yypos+1))
-| 12 => (Tokens.STRUCT(yypos,yypos+3))
-| 121 => (Tokens.BANG(yypos,yypos+1))
-| 124 => (Tokens.BTYPECOMP(yypos,yypos+2))
-| 126 => (Tokens.BTYPECHOICE(yypos,yypos+1))
-| 130 => (Tokens.BTYPEEND(yypos,yypos+3))
-| 133 => (Tokens.ARROW(yypos,yypos+2))
-| 136 => (Tokens.ASCRIBEO(yypos,yypos+2))
-| 138 => (Tokens.PLUS(yypos,yypos+1))
-| 140 => (Tokens.MINUS(yypos,yypos+1))
-| 142 => (Tokens.TIMES(yypos,yypos+1))
-| 144 => (Tokens.DIVIDE(yypos,yypos+1))
-| 146 => (Tokens.EQUALS(yypos,yypos+2))
-| 148 => (Tokens.UMINUS(yypos,yypos+1))
-| 151 => (Tokens.NEQ(yypos,yypos+2))
-| 154 => (Tokens.FNASSIGN(yypos,yypos+2))
-| 157 => (Tokens.LTEQ(yypos,yypos+2))
-| 160 => (Tokens.GTEQ(yypos,yypos+2))
-| 162 => (Tokens.LT(yypos,yypos+1))
-| 164 => (Tokens.GT(yypos,yypos+1))
-| 167 => (Tokens.FN(yypos,yypos+1))
-| 175 => (Tokens.BAND(yypos,yypos+7))
-| 182 => (Tokens.BOR(yypos,yypos+6))
-| 184 => (Tokens.CLAUSE(yypos,yypos+1))
-| 187 => (Tokens.CONS(yypos,yypos+2))
-| 190 => (Tokens.MUTASSIGN(yypos,yypos+2))
-| 192 => (Tokens.TYPEDELIM(yypos,yypos+1))
-| 194 => (Tokens.LPAR(yypos,yypos+1))
-| 196 => (Tokens.RPAR(yypos,yypos+1))
-| 198 => (Tokens.LBR(yypos,yypos+1))
-| 200 => (Tokens.RBR(yypos,yypos+1))
-| 202 => (Tokens.LSQ(yypos,yypos+1))
-| 204 => (Tokens.RSQ(yypos,yypos+1))
-| 206 => (Tokens.COMMA(yypos,yypos+1))
-| 208 => (Tokens.SEMI(yypos,yypos+1))
-| 211 => (YYBEGIN COMMENT; continue())
-| 214 => (YYBEGIN LML; continue())
-| 216 => (continue())
-| 218 => (continue())
-| 22 => (Tokens.STRUCTURE(yypos,yypos+9))
-| 220 => (YYBEGIN LML; Tokens.LSTR(!tliteral,!tlstart,!tlstart + size (!tliteral)))
-| 222 => (Tokens.ERROR(!tlstart,yypos))
-| 224 => let val yytext=yymktext() in tliteral := !tliteral ^ yytext; continue() end
-| 227 => let val yytext=yymktext() in Tokens.IDENT(yytext,yypos,yypos+size yytext) end
-| 229 => (continue())
-| 231 => (continue())
-| 233 => let val yytext=yymktext() in Tokens.ERROR(yypos,yypos+size yytext) end
-| 26 => (Tokens.SIG(yypos,yypos+3))
-| 36 => (Tokens.SIGNATURE(yypos,yypos+9))
-| 39 => (Tokens.IF(yypos,yypos+2))
-| 44 => (Tokens.THEN(yypos,yypos+2))
-| 49 => (Tokens.ELSE(yypos,yypos+4))
-| 5 => (Tokens.VAL(yypos,yypos+3))
-| 53 => (Tokens.NIL(yypos,yypos+3))
-| 62 => (Tokens.DATATYPE(yypos,yypos+8))
-| 65 => (Tokens.OF(yypos,yypos+2))
-| 70 => (Tokens.TYPE(yypos,yypos+4))
-| 74 => (Tokens.FUN(yypos,yypos+3))
-| 78 => (Tokens.LET(yypos,yypos+3))
-| 81 => (Tokens.IN(yypos,yypos+2))
-| 85 => (Tokens.END(yypos,yypos+3))
-| 89 => (Tokens.BNOT(yypos,yypos+3))
-| 94 => (Tokens.TRUE(yypos,yypos+4))
+  1 => ((*#line 26.21 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex"*)YYBEGIN LML; continue()(*#line 1086.1 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex.sml"*)
+)
+| 100 => ((*#line 46.23 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex"*)Tokens.FALSE(yypos,yypos+5)(*#line 1088.1 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex.sml"*)
+)
+| 103 => let val yytext=yymktext() in (*#line 48.20 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex"*)Tokens.LINT(someOrFail(Int.fromString yytext),yypos,yypos+size yytext)(*#line 1090.1 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex.sml"*)
+ end
+| 112 => let val yytext=yymktext() in (*#line 49.18 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex"*)Tokens.LREAL(someOrFail(Real.fromString yytext),yypos,yypos+size yytext)(*#line 1092.1 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex.sml"*)
+ end
+| 114 => ((*#line 50.16 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex"*)YYBEGIN STRINGLIT; tlstart := yypos; tliteral := ""; continue()(*#line 1094.1 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex.sml"*)
+)
+| 117 => ((*#line 52.16 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex"*)Tokens.BTYPESTART(yypos,yypos+2)(*#line 1096.1 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex.sml"*)
+)
+| 119 => ((*#line 53.15 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex"*)Tokens.BTYPERECV(yypos,yypos+1)(*#line 1098.1 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex.sml"*)
+)
+| 12 => ((*#line 29.20 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex"*)Tokens.STRUCT(yypos,yypos+3)(*#line 1100.1 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex.sml"*)
+)
+| 121 => ((*#line 54.15 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex"*)Tokens.BANG(yypos,yypos+1)(*#line 1102.1 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex.sml"*)
+)
+| 124 => ((*#line 55.16 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex"*)Tokens.BTYPECOMP(yypos,yypos+2)(*#line 1104.1 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex.sml"*)
+)
+| 126 => ((*#line 56.15 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex"*)Tokens.BTYPECHOICE(yypos,yypos+1)(*#line 1106.1 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex.sml"*)
+)
+| 130 => ((*#line 57.17 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex"*)Tokens.BTYPEEND(yypos,yypos+3)(*#line 1108.1 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex.sml"*)
+)
+| 133 => ((*#line 59.16 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex"*)Tokens.ARROW(yypos,yypos+2)(*#line 1110.1 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex.sml"*)
+)
+| 136 => ((*#line 60.16 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex"*)Tokens.ASCRIBEO(yypos,yypos+2)(*#line 1112.1 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex.sml"*)
+)
+| 138 => ((*#line 61.15 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex"*)Tokens.PLUS(yypos,yypos+1)(*#line 1114.1 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex.sml"*)
+)
+| 140 => ((*#line 62.15 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex"*)Tokens.MINUS(yypos,yypos+1)(*#line 1116.1 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex.sml"*)
+)
+| 142 => ((*#line 63.15 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex"*)Tokens.TIMES(yypos,yypos+1)(*#line 1118.1 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex.sml"*)
+)
+| 144 => ((*#line 64.15 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex"*)Tokens.DIVIDE(yypos,yypos+1)(*#line 1120.1 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex.sml"*)
+)
+| 146 => ((*#line 65.15 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex"*)Tokens.EQUALS(yypos,yypos+2)(*#line 1122.1 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex.sml"*)
+)
+| 148 => ((*#line 66.15 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex"*)Tokens.UMINUS(yypos,yypos+1)(*#line 1124.1 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex.sml"*)
+)
+| 151 => ((*#line 67.16 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex"*)Tokens.NEQ(yypos,yypos+2)(*#line 1126.1 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex.sml"*)
+)
+| 154 => ((*#line 68.16 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex"*)Tokens.FNASSIGN(yypos,yypos+2)(*#line 1128.1 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex.sml"*)
+)
+| 157 => ((*#line 69.16 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex"*)Tokens.LTEQ(yypos,yypos+2)(*#line 1130.1 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex.sml"*)
+)
+| 160 => ((*#line 70.16 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex"*)Tokens.GTEQ(yypos,yypos+2)(*#line 1132.1 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex.sml"*)
+)
+| 162 => ((*#line 71.15 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex"*)Tokens.LT(yypos,yypos+1)(*#line 1134.1 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex.sml"*)
+)
+| 164 => ((*#line 72.15 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex"*)Tokens.GT(yypos,yypos+1)(*#line 1136.1 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex.sml"*)
+)
+| 167 => ((*#line 73.16 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex"*)Tokens.FN(yypos,yypos+1)(*#line 1138.1 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex.sml"*)
+)
+| 175 => ((*#line 74.21 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex"*)Tokens.BAND(yypos,yypos+7)(*#line 1140.1 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex.sml"*)
+)
+| 182 => ((*#line 75.20 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex"*)Tokens.BOR(yypos,yypos+6)(*#line 1142.1 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex.sml"*)
+)
+| 184 => ((*#line 76.28 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex"*)Tokens.CLAUSE(yypos,yypos+1)(*#line 1144.1 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex.sml"*)
+)
+| 187 => ((*#line 77.29 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex"*)Tokens.CONS(yypos,yypos+2)(*#line 1146.1 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex.sml"*)
+)
+| 190 => ((*#line 78.16 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex"*)Tokens.MUTASSIGN(yypos,yypos+2)(*#line 1148.1 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex.sml"*)
+)
+| 192 => ((*#line 79.28 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex"*)Tokens.TYPEDELIM(yypos,yypos+1)(*#line 1150.1 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex.sml"*)
+)
+| 194 => ((*#line 81.15 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex"*)Tokens.LPAR(yypos,yypos+1)(*#line 1152.1 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex.sml"*)
+)
+| 196 => ((*#line 82.15 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex"*)Tokens.RPAR(yypos,yypos+1)(*#line 1154.1 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex.sml"*)
+)
+| 198 => ((*#line 83.15 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex"*)Tokens.LBR(yypos,yypos+1)(*#line 1156.1 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex.sml"*)
+)
+| 200 => ((*#line 84.15 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex"*)Tokens.RBR(yypos,yypos+1)(*#line 1158.1 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex.sml"*)
+)
+| 202 => ((*#line 85.15 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex"*)Tokens.LSQ(yypos,yypos+1)(*#line 1160.1 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex.sml"*)
+)
+| 204 => ((*#line 86.15 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex"*)Tokens.RSQ(yypos,yypos+1)(*#line 1162.1 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex.sml"*)
+)
+| 206 => ((*#line 87.15 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex"*)Tokens.COMMA(yypos,yypos+1)(*#line 1164.1 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex.sml"*)
+)
+| 208 => ((*#line 88.15 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex"*)Tokens.SEMI(yypos,yypos+1)(*#line 1166.1 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex.sml"*)
+)
+| 211 => ((*#line 90.16 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex"*)YYBEGIN COMMENT; continue()(*#line 1168.1 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex.sml"*)
+)
+| 214 => ((*#line 92.20 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex"*)YYBEGIN LML; continue()(*#line 1170.1 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex.sml"*)
+)
+| 216 => ((*#line 93.21 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex"*)continue()(*#line 1172.1 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex.sml"*)
+)
+| 218 => ((*#line 94.17 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex"*)continue()(*#line 1174.1 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex.sml"*)
+)
+| 22 => ((*#line 30.22 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex"*)Tokens.STRUCTURE(yypos,yypos+9)(*#line 1176.1 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex.sml"*)
+)
+| 220 => ((*#line 96.22 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex"*)YYBEGIN LML; Tokens.LSTR(!tliteral,!tlstart,!tlstart + size (!tliteral))(*#line 1178.1 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex.sml"*)
+)
+| 222 => ((*#line 97.22 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex"*)Tokens.ERROR(!tlstart,yypos)(*#line 1180.1 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex.sml"*)
+)
+| 224 => let val yytext=yymktext() in (*#line 98.19 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex"*)tliteral := !tliteral ^ yytext; continue()(*#line 1182.1 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex.sml"*)
+ end
+| 227 => let val yytext=yymktext() in (*#line 100.19 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex"*)Tokens.IDENT(yytext,yypos,yypos+size yytext)(*#line 1184.1 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex.sml"*)
+ end
+| 229 => ((*#line 102.17 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex"*)continue()(*#line 1186.1 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex.sml"*)
+)
+| 231 => ((*#line 103.17 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex"*)continue()(*#line 1188.1 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex.sml"*)
+)
+| 233 => let val yytext=yymktext() in (*#line 104.14 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex"*)Tokens.ERROR(yypos,yypos+size yytext)(*#line 1190.1 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex.sml"*)
+ end
+| 26 => ((*#line 31.17 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex"*)Tokens.SIG(yypos,yypos+3)(*#line 1192.1 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex.sml"*)
+)
+| 36 => ((*#line 32.22 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex"*)Tokens.SIGNATURE(yypos,yypos+9)(*#line 1194.1 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex.sml"*)
+)
+| 39 => ((*#line 33.16 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex"*)Tokens.IF(yypos,yypos+2)(*#line 1196.1 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex.sml"*)
+)
+| 44 => ((*#line 34.18 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex"*)Tokens.THEN(yypos,yypos+2)(*#line 1198.1 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex.sml"*)
+)
+| 49 => ((*#line 35.18 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex"*)Tokens.ELSE(yypos,yypos+4)(*#line 1200.1 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex.sml"*)
+)
+| 5 => ((*#line 28.17 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex"*)Tokens.VAL(yypos,yypos+3)(*#line 1202.1 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex.sml"*)
+)
+| 53 => ((*#line 36.28 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex"*)Tokens.NIL(yypos,yypos+3)(*#line 1204.1 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex.sml"*)
+)
+| 62 => ((*#line 37.22 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex"*)Tokens.DATATYPE(yypos,yypos+8)(*#line 1206.1 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex.sml"*)
+)
+| 65 => ((*#line 38.16 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex"*)Tokens.OF(yypos,yypos+2)(*#line 1208.1 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex.sml"*)
+)
+| 70 => ((*#line 39.18 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex"*)Tokens.TYPE(yypos,yypos+4)(*#line 1210.1 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex.sml"*)
+)
+| 74 => ((*#line 40.26 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex"*)Tokens.FUN(yypos,yypos+3)(*#line 1212.1 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex.sml"*)
+)
+| 78 => ((*#line 41.26 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex"*)Tokens.LET(yypos,yypos+3)(*#line 1214.1 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex.sml"*)
+)
+| 81 => ((*#line 42.25 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex"*)Tokens.IN(yypos,yypos+2)(*#line 1216.1 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex.sml"*)
+)
+| 85 => ((*#line 43.26 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex"*)Tokens.END(yypos,yypos+3)(*#line 1218.1 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex.sml"*)
+)
+| 89 => ((*#line 44.21 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex"*)Tokens.BNOT(yypos,yypos+3)(*#line 1220.1 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex.sml"*)
+)
+| 94 => ((*#line 45.22 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex"*)Tokens.TRUE(yypos,yypos+4)(*#line 1222.1 "/Users/gdpe/Documents/ml2pp0/compiler/src/frontend/lml.lex.sml"*)
+)
 | _ => raise Internal.LexerError
 
 		) end )
 
-	val {fin,trans} = Vector.sub (Internal.tab, s)
+	val {fin,trans} = Vector.sub(Internal.tab, s)
 	val NewAcceptingLeaves = fin::AcceptingLeaves
 	in if l = !yybl then
 	     if trans = #trans(Vector.sub(Internal.tab,0))
 	       then action(l,NewAcceptingLeaves
 ) else	    let val newchars= if !yydone then "" else yyinput 1024
-	    in if (String.size newchars)=0
+	    in if (size newchars)=0
 		  then (yydone := true;
 		        if (l=i0) then UserDeclarations.eof ()
 		                  else action(l,NewAcceptingLeaves))
 		  else (if i0=l then yyb := newchars
-		     else yyb := String.substring(!yyb,i0,l-i0)^newchars;
-		     yygone := !yygone+i0;
-		     yybl := String.size (!yyb);
+		     else yyb := substring(!yyb,i0,l-i0)^newchars;
+		     yygone := YYPosInt.+(!yygone, YYPosInt.fromInt i0);
+		     yybl := size (!yyb);
 		     scan (s,AcceptingLeaves,l-i0,0))
 	    end
-	  else let val NewChar = Char.ord (CharVector.sub (!yyb,l))
+	  else let val NewChar = Char.ord(CharVector.sub(!yyb,l))
 		val NewChar = if NewChar<128 then NewChar else 128
-		val NewState = Char.ord (CharVector.sub (trans,NewChar))
+		val NewState = Char.ord(CharVector.sub(trans,NewChar))
 		in if NewState=0 then action(l,NewAcceptingLeaves)
 		else scan(NewState,NewAcceptingLeaves,l+1,i0)
 	end
 	end
 (*
-	val start= if String.substring(!yyb,!yybufpos-1,1)="\n"
+	val start= if substring(!yyb,!yybufpos-1,1)="\n"
 then !yybegin+1 else !yybegin
 *)
 	in scan(!yybegin (* start *),nil,!yybufpos,!yybufpos)
