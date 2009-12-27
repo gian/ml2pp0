@@ -2,11 +2,11 @@ You will need MLton (http://www.mlton.org) installed in order to compile this pr
 
 Usage:
 
-lml <lml-file> <spec-file>
+ml2pp0 file.sml
 
 There are small examples in the doc/examples directory, with more coming soon, I hope.
 
 Gian Perrone
-20 Aug 2009
+27 December 2009
 http://plsadventures.blogspot.com
 
