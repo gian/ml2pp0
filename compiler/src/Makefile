@@ -17,7 +17,7 @@ SOURCES =			\
 
 
 .PHONY: all $(SOURCES)
-all: $(BIN)/ml2pp0 $(BIN)
+all: $(BIN)/ml2pp0 
 .PHONY: clean
 
 $(BIN):
@@ -34,7 +34,7 @@ spec/specl.grm.sig spec/specl.grm.sml spec/specl.lex.sml: spec/specl.grm spec/sp
 	mllex spec/specl.lex
 	mlyacc spec/specl.grm
 
-$(BIN)/ml2pp0: $(SOURCES) 
+$(BIN)/ml2pp0: $(SOURCES) $(BIN)
 	mlton -output $(BIN)/ml2pp0 lml.mlb
 
 
