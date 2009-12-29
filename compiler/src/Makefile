@@ -1,16 +1,14 @@
 BIN = ../bin
 
 SOURCES =			\
-	frontend/lml.lex.sml \
+	frontend/ml.lex.sml \
 	frontend/*.sml	\
-	trace/*.sml	\
 	types/*.sml	\
 	lib/*.sml	\
-	spec/*.sml	\
 	optimiser/*.sml	\
 	debug.sml	\
-	lml.sml		\
-	lml.mlb
+	ml2pp0.sml		\
+	ml2pp0.mlb
 
 
 .PHONY: all 
@@ -23,15 +21,11 @@ $(BIN):
 clean:
 	../../bin/clean
 
-frontend/lml.grm.sig frontend/lml.grm.sml frontend/lml.lex.sml: frontend/lml.grm frontend/lml.lex
-	mllex frontend/lml.lex
-	mlyacc frontend/lml.grm
-
-spec/specl.grm.sig spec/specl.grm.sml spec/specl.lex.sml: spec/specl.grm spec/specl.lex
-	mllex spec/specl.lex
-	mlyacc spec/specl.grm
+frontend/ml.grm.sig frontend/ml.grm.sml frontend/ml.lex.sml: frontend/ml.grm frontend/ml.lex
+	mllex frontend/ml.lex
+	mlyacc frontend/ml.grm
 
 $(BIN)/ml2pp0: $(SOURCES) $(BIN)
-	mlton -output $(BIN)/ml2pp0 lml.mlb
+	mlton -output $(BIN)/ml2pp0 ml2pp0.mlb
 
 

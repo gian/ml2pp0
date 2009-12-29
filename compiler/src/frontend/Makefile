@@ -2,20 +2,18 @@ BUILD = ../build
 BIN = ../bin
 
 .PHONY: all
-all: lml.lex.sml lml.grm.sig lml.grm.sml
+all: ml.lex.sml ml.grm.sig ml.grm.sml
 
 .PHONY: clean
 clean:
 	../../bin/clean
 
-lml.lex.sml: lml.lex
-	rm -rf lml.lex.sml
-	mllex lml.lex
-	chmod -w lml.lex.sml
+ml.lex.sml: ml.lex
+	rm -rf ml.lex.sml
+	mllex ml.lex
 
-lml.grm.sig lml.grm.sml: lml.grm
-	rm -f lml.grm.*
-	mlyacc lml.grm
-	chmod -w lml.grm.*
+ml.grm.sig ml.grm.sml: ml.grm
+	rm -f ml.grm.*
+	mlyacc ml.grm
 
 

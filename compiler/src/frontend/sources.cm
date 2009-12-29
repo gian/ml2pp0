@@ -2,8 +2,8 @@ Group is
 	parse.sml
 	../absyn.sml
         ../types2.sml
-	lml.grm
-	lml.lex
+	ml.grm
+	ml.lex
 	$/smlnj-lib.cm
 	$/ml-yacc-lib.cm
 	$/basis.cm	
