@@ -12,6 +12,8 @@ type clause = {pats : A.pat list,
                resultType : A.ty option,
                body : A.exp}
 
+type match = (A.pat * A.exp) list
+
   %%
   %term
       CHAR of int
@@ -50,99 +52,99 @@ type clause = {pats : A.pat list,
        | clauses of clause list
        | clausesTop of clause list
        | commapats of A.pat list
-       | con of Con.t
-       | const of Const.t
-       | const' of Const.node
-       | constr of Con.t * Type.t option
-       | constraint of Type.t option
-       | constrs of (Con.t * Type.t option) list
-       | constOrBool of Const.t
-       | datBind of DatBind.t
-       | datBindNoWithtype of DatBind.t
-       | datatypeRhs of DatatypeRhs.t
-       | datatypeRhsNoWithtype of DatatypeRhs.t
-       | datatypeRhsnode of DatatypeRhs.node
-       | datatypeRhsnodeNoWithtype of DatatypeRhs.node
-       | db of db
-       | dbs of db vector
-       | dbs' of db list
-       | dec of Dec.t
-       | decnode of Dec.node
-       | decnolocal of Dec.node
-       | decs of Dec.t
-       | decsnode of Dec.node
+       | con of A.exp
+       | const of A.exp
+       | const' of A.exp
+       | constr of A.exp * A.ty option
+       | constraint of A.ty option
+       | constrs of (A.exp * A.ty option) list
+       | constOrBool of A.exp
+       | datBind of A.bind
+       | datBindNoWithtype of A.bind 
+       | datatypeRhs of A.bind
+       | datatypeRhsNoWithtype of A.bind
+       | datatypeRhsnode of A.bind
+       | datatypeRhsnodeNoWithtype of A.bind
+       | db of A.ty * (A.exp * A.ty option) list
+       | dbs of (A.ty * (A.exp * A.ty option) list) list
+       | dbs' of (A.ty * (A.exp * A.ty option) list) list
+       | dec of A.dec
+       | decnode of A.dec
+       | decnolocal of A.dec
+       | decs of A.dec
+       | decsnode of A.dec
        | digit of int
-       | eb of eb
-       | ebrhs of EbRhs.t
-       | ebrhsnode of EbRhs.node
-       | ebs of eb list
-       | elabel of (Field.t * Exp.t)
-       | elabels of (Field.t * Exp.t) list
-       | exndesc of exndesc
-       | exndescs of exndesc list
-       | exp of Exp.t
-       | exp_2c of Exp.t list
-       | exp_list of Exp.t list
-       | exp_ps of Exp.t list
-       | expnode of Exp.node
-       | expsAndTopdecs of Topdec.t list list
-       | fctarg of FctArg.node
-       | fctid of Fctid.t
-       | field of Field.t
-       | fixity of Fixity.t
-       | funbinds of funbind list
-       | funbinds' of Strexp.t * funbind list
-       | funbinds'1 of funbind whereAnd
-       | funbinds'1' of funbind whereAnd
-       | funbinds'2 of funbind list
-       | funs of clauses list
-       | id of Symbol.t * Region.t
-       | idEqual of Symbol.t * Region.t
-       | idNoAsterisk of Symbol.t * Region.t
-       | int of IntInf.t
-       | longcon of Longcon.t
-       | longid of Symbol.t list * Region.t
-       | longidEqual of Symbol.t list * Region.t
-       | longidNoAsterisk of Symbol.t list * Region.t
-       | longstrid of Longstrid.t
-       | longstrideqns of Longstrid.t list
-       | longstrids of Longstrid.t list
-       | longtycon of Longtycon.t
-       | longtyconeqns of Longtycon.t list
-       | longvidands of Longvid.t list
-       | longvid of Longvid.t
-       | longvidNoEqual of Longvid.t
-       | match of Match.t
-       | opaspat of Pat.t option
-       | opcon of Con.t
-       | ot_list of Exp.t list
-       | pat of Pat.t
-       | pat_2c of Pat.t list
-       | patitem of (Field.t * Pat.Item.t)
-       | patitems of ((Field.t * Pat.Item.t) list * bool)
-       | patnode of Pat.node
-       | pats of Pat.t list
-       | priority of Priority.t
-       | program of Program.t
-       | repl of DatatypeRhs.node
-       | rule of rule
-       | rules of rule list
-       | rvalbind of rvb list
-       | rvalbindRest of rvb list
-       | sdec of Dec.t
-       | sdecs of Dec.t
-       | sdecsPlus of Dec.t
-       | sharespec of Equation.node
-       | sigbinds of sigbind list
-       | sigbinds' of sigbind whereAnd
-       | sigbinds'' of sigbind whereAnd
-       | sigconst of SigConst.t
-       | sigexp of Sigexp.t
-       | sigexp' of Sigexp.t
-       | sigexp'node of Sigexp.node
-       | sigexpnode of Sigexp.node
-       | sigid of Sigid.t
-       | sigids of Sigid.t list
+       | eb of unit 
+       | ebrhs of unit
+       | ebrhsnode of unit
+       | ebs of unit
+	   | elabel of (A.exp * A.exp)
+       | elabels of (A.exp * A.exp) list
+       | exndesc of A.exp * A.ty option
+       | exndescs of (A.exp * A.ty option) list
+       | exp of A.exp
+       | exp_2c of A.exp list
+       | exp_list of A.exp list
+       | exp_ps of A.exp list
+       | expnode of A.exp
+       | expsAndTopdecs of A.dec list list
+       | fctarg of unit
+       | fctid of unit
+       | field of A.exp
+       | fixity of A.fixity
+       | funbinds of unit
+       | funbinds' of unit
+       | funbinds'1 of unit
+       | funbinds'1' of unit
+       | funbinds'2 of unit
+       | funs of clause list list
+       | id of A.symbol
+       | idEqual of A.symbol
+       | idNoAsterisk of A.symbol
+       | int of int 
+       | longcon of unit 
+       | longid of A.symbol list
+       | longidEqual of A.symbol list
+       | longidNoAsterisk of A.symbol list
+       | longstrid of unit
+       | longstrideqns of unit
+       | longstrids of unit
+       | longtycon of A.ty
+       | longtyconeqns of A.ty list
+       | longvidands of A.symbol list
+       | longvid of A.symbol
+       | longvidNoEqual of A.symbol
+       | match of match 
+       | opaspat of A.pat option
+       | opcon of A.exp
+       | ot_list of A.exp list
+       | pat of A.pat
+       | pat_2c of A.pat list
+       | patitem of A.pat
+       | patitems of A.pat list
+	   | patnode of A.pat
+       | pats of A.pat list
+       | priority of A.priority
+       | program of A.program
+       | repl of A.bind
+       | rule of A.pat * A.exp
+       | rules of match
+       | rvalbind of (A.pat * match) list
+       | rvalbindRest of (A.pat * match) list
+(*     | sdec of unit
+       | sdecs of unit
+       | sdecsPlus of unit
+       | sharespec of unit
+       | sigbinds of unit
+       | sigbinds' of unit
+       | sigbinds'' of unit
+       | sigconst of unit
+       | sigexp of unit
+       | sigexp' of unit
+       | sigexp'node of unit
+       | sigexpnode of unit
+       | sigid of unit
+       | sigids of unit
        | spec of Spec.t
        | specnode of Spec.node
        | specs of Spec.t
@@ -163,50 +165,46 @@ type clause = {pats : A.pat list,
        | strexp2 of Strexp.t
        | strexp2node of Strexp.node
        | strexpnode of Strexp.node
-       | strid of Strid.t
+       | strid of Strid.t  *)
        | string of string
-       | symattributes of PrimKind.SymbolAttribute.t list
-       | tlabel of (Field.t * Type.t)
-       | tlabels  of (Field.t * Type.t) list
-       | topdec of Topdec.t
-       | topdecnode of Topdec.node
-       | topdecs of Topdec.t list list
-       | tuple_ty of Type.t list
-       | ty of Type.t
-       | ty' of Type.t
-       | ty'node of Type.node
-       | ty0_pc of Type.t list
-       | ty1 of Type.t
-       | tyOpt of Type.t option
-       | tycon of Tycon.t
-       | tynode of Type.node
-       | typBind of TypBind.t
-       | typBind' of {def: Type.t,
-                      tycon: Tycon.t,
-                      tyvars: Tyvar.t vector} list
-       | typBind'' of {def: Type.t,
-                       tycon: Tycon.t,
-                       tyvars: Tyvar.t vector} list
-       | typdesc of typdesc
-       | typdescs of typdesc list
-       | tyvar of Tyvar.t
-       | tyvar_pc of Tyvar.t list
-       | tyvars of Tyvar.t vector
-       | tyvarseq of Tyvar.t vector
-       | valbind of vb list * rvb list
-       | valbindRest of vb list * rvb list
-       | valbindTop of vb vector * rvb vector
-       | valdesc of valdesc
-       | valdescs of valdesc list
-       | var of Var.t
-       | vid of Vid.t
-       | vidNoEqual of Vid.t
-       | vids of Vid.t list
-       | wherespec of wherespec
-       | wherespecs of wherespec vector
-       | wherespecs' of wherespec list
-       | withtypes of TypBind.t
-       | word of IntInf.t
+       | symattributes of unit 
+       | tlabel of (A.exp * A.ty)
+       | tlabels  of (A.exp * A.ty) list
+       | topdec of A.dec
+       | topdecnode of A.dec
+       | topdecs of A.dec list list
+       | tuple_ty of A.ty list
+       | ty of A.ty
+       | ty' of A.ty
+       | ty'node of A.ty
+       | ty0_pc of A.ty list
+       | ty1 of A.ty
+       | tyOpt of A.ty option
+       | tycon of A.ty
+       | tynode of A.ty
+       | typBind of A.bind
+       | typBind' of A.bind list 
+       | typBind'' of A.bind list
+       | typdesc of A.ty
+       | typdescs of A.ty list
+       | tyvar of A.ty
+       | tyvar_pc of A.ty list
+       | tyvars of A.ty list
+       | tyvarseq of A.ty list
+       | valbind of (A.pat * A.exp) list * (A.pat * match) list
+       | valbindRest of (A.pat * A.exp) list * (A.pat * match) list
+       | valbindTop of (A.pat * A.exp) list * (A.pat * match) list
+       | valdesc of unit
+       | valdescs of unit
+       | var of A.exp
+       | vid of A.exp
+       | vidNoEqual of A.exp
+       | vids of A.exp list
+       | wherespec of unit
+       | wherespecs of unit
+       | wherespecs' of unit
+       | withtypes of A.bind
+       | word of int
 
 %verbose
 %pos SourcePos.t
