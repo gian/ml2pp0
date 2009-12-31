@@ -8,9 +8,7 @@
 
 structure A = AST
 
-type clause = {pats : A.pat list,
-               resultType : A.ty option,
-               body : A.exp}
+type clause = A.clause
 
 type match = (A.pat * A.exp) list
 
@@ -197,9 +195,9 @@ type match = (A.pat * A.exp) list
        | valdesc of unit
        | valdescs of unit
        | var of A.exp
-       | vid of A.exp
-       | vidNoEqual of A.exp
-       | vids of A.exp list
+       | vid of A.symbol
+       | vidNoEqual of A.symbol
+       | vids of A.symbol list
        | wherespec of unit
        | wherespecs of unit
        | wherespecs' of unit
@@ -251,306 +249,79 @@ type match = (A.pat * A.exp) list
 
 %%
 
-program: expsAndTopdecs (Program.T expsAndTopdecs)
+program: expsAndTopdecs (expsAndTopdecs)
 
 expsAndTopdecs:
-    exp SEMICOLON expsAndTopdecs ([Topdec.fromExp exp] :: expsAndTopdecs)
+    exp SEMICOLON expsAndTopdecs ([A.ExpDec ([],exp)] :: expsAndTopdecs)
   | topdecs (topdecs)
 
 topdecs:
       ([])
-  | topdec topdecs (consTopdec (topdec, topdecs))
+  | topdec topdecs (topdec :: topdecs)
   | SEMICOLON expsAndTopdecs ([] :: expsAndTopdecs)
 
-topdec : topdecnode (Topdec.makeRegion' (topdecnode,
-                                         topdecnodeleft,
-                                         topdecnoderight))
+topdec : topdecnode (topdecnode)
 
 topdecnode
-   : strdec
-     (Topdec.Strdec strdec)
-   | SIGNATURE sigbinds
-     (let
-         val sigbinds = Vector.fromList sigbinds
-         val d = Topdec.Signature sigbinds
-      in
-         d
-      end)
-   | FUNCTOR funbinds
-     (Topdec.Functor (Vector.fromList funbinds))
+   : strdec  (strdec)
 
 (*---------------------------------------------------*)
 (*                    Structures                     *)
 (*---------------------------------------------------*)
 
-strdecs : strdecsnode (Strdec.makeRegion'
-                       (strdecsnode, strdecsnodeleft, strdecsnoderight))
+strdecs : strdecsnode (strdecsnode)
 
-strdecsnode :                    (Strdec.Seq [])
-            | SEMICOLON strdecs  (Strdec.Seq [strdecs])
-            | strdec strdecs     (Strdec.Seq [strdec, strdecs])
+strdecsnode :                    ([])
+            | SEMICOLON strdecs  ([strdecs])
+            | strdec strdecs     ([strdec, strdecs])
 
-strdec : strdecnode (Strdec.makeRegion' (strdecnode,
-                                         strdecnodeleft, strdecnoderight))
+strdec : strdecnode (strdecnode)
 
 strdecnode
-   : STRUCTURE strbinds
-     (let
-         val strbinds = Vector.fromList strbinds
-         val d = Strdec.Structure strbinds
-
-
-
-      in
-         d
-      end)
-   | LOCAL strdecs IN strdecs END  (Strdec.Local (strdecs1, strdecs2))
-   | decnolocal
-     (Strdec.Core (Dec.makeRegion' (decnolocal,
-                                    decnolocalleft, decnolocalright)))
-
-strbinds : strid sigconst EQUALOP strbinds'
-           (let val (def,strbinds) = strbinds'
-            in {name = strid, def = def, constraint = sigconst}
-               :: strbinds
-            end)
-
-strbinds' : strexp1 strbinds'1    (augment1 (strexp1, strbinds'1))
-          | strexp2 strbinds'2    ((strexp2,strbinds'2))
-
-strbinds'1 : strbinds'2                   (([], strbinds'2left, strbinds'2))
-           | WHERE wherespec strbinds'1'  (cons1 (wherespec,strbinds'1'))
-
-strbinds'1' : strbinds'1                 (strbinds'1)
-            | AND wherespec strbinds'1'  (cons1 (wherespec,strbinds'1'))
-
-strbinds'2 :               ([])
-           | AND strbinds  (strbinds)
-
-strexp : strexpnode (Strexp.makeRegion' (strexpnode,
-                                        strexpnodeleft, strexpnoderight))
-
-strexpnode
-  : strexp1
-    (let
-        val (strexp, sigconst, sigexp) = strexp1
-     in
-        Strexp.Constrained (strexp, sigconst sigexp)
-     end)
-  | strexp1 wherespecs
-    (let
-        val (strexp,sigconst,sigexp) = strexp1
-     in
-        Strexp.Constrained
-        (strexp,
-         sigconst (Sigexp.wheree
-                   (sigexp, wherespecs,
-                    Region.extendRight (Sigexp.region sigexp,
-                                        wherespecsright))))
-     end)
-  | strexp2node
-    (strexp2node)
-
-strexp1 : strexp COLON sigexp'    ((strexp,SigConst.Transparent,sigexp'))
-        | strexp COLONGT sigexp'  ((strexp,SigConst.Opaque,sigexp'))
-
-strexp2 : strexp2node (Strexp.makeRegion'
-                       (strexp2node, strexp2nodeleft, strexp2noderight))
-
-strexp2node
-        : longid                     (Strexp.Var (Longstrid.fromSymbols longid))
-        | STRUCT strdecs END         (Strexp.Struct strdecs)
-        | longid arg_fct
-          (Strexp.App (Fctid.fromSymbol (ensureNonqualified longid), arg_fct))
-        | LET strdecs IN strexp END  (Strexp.Let (strdecs,strexp))
-
-arg_fct : LPAREN strexp RPAREN   (strexp)
-        | LPAREN strdecs RPAREN  (Strexp.makeRegion'
-                                  (Strexp.Struct strdecs,
-                                   strdecsleft, strdecsright))
-
-(*---------------------------------------------------*)
-(*                    Signatures                     *)
-(*---------------------------------------------------*)
-
-sigexp
-  : sigexp'
-    (sigexp')
-  | sigexp' wherespecs
-    (Sigexp.wheree (sigexp', wherespecs, reg (sigexp'left, wherespecsright)))
-
-wherespecs : wherespecs' (Vector.fromList wherespecs')
-
-wherespecs'
-  : WHERE wherespec              ([wherespec])
-  | WHERE wherespec wherespecs'  (wherespec :: wherespecs')
-  | WHERE wherespec andspecs     (wherespec :: andspecs)
-
-andspecs
-  : AND wherespec              ([wherespec])
-  | AND wherespec andspecs     (wherespec :: andspecs)
-  | AND wherespec wherespecs'  (wherespec :: wherespecs')
-
-sigbinds: sigid EQUALOP sigexp' sigbinds'  (augment (sigid, sigexp', sigbinds'))
-
-sigexp' : sigexp'node (Sigexp.makeRegion' (sigexp'node,
-                                          sigexp'nodeleft,
-                                          sigexp'noderight))
-
-sigexp'node : sigid                      (Sigexp.Var sigid)
-            | SIG specs END              (Sigexp.Spec specs)
-
-sigbinds':                             (([], defaultPos, []))
-         | AND sigbinds                (([], defaultPos, sigbinds))
-         | WHERE wherespec sigbinds''  (cons1 (wherespec,sigbinds''))
-
-sigbinds'' : sigbinds'                 (sigbinds')
-           | AND wherespec sigbinds''  (cons1 (wherespec,sigbinds''))
-
-wherespec  : TYPE tyvars longtycon EQUALOP ty  ({tyvars = tyvars,
-                                                 longtycon = longtycon,
-                                                 ty = ty})
-
-sigconst :                 (SigConst.None)
-         | COLON sigexp    (SigConst.Transparent sigexp)
-         | COLONGT sigexp  (SigConst.Opaque sigexp)
-
-specs  :                   (Spec.makeRegion (Spec.Empty, Region.bogus))
-       | SEMICOLON specs   (specs)
-       | spec specs        (Spec.seq (spec, specs))
-
-spec : specnode (Spec.makeRegion' (specnode, specnodeleft, specnoderight))
-
-specnode : VAL valdescs         (Spec.Val (Vector.fromList valdescs))
-         | TYPE typdescs        (Spec.Type (Vector.fromList typdescs))
-         | TYPE typBind         (Spec.TypeDefs typBind)
-         | EQTYPE typdescs      (Spec.Eqtype (Vector.fromList typdescs))
-         | DATATYPE datatypeRhsNoWithtype (Spec.Datatype datatypeRhsNoWithtype)
-         | EXCEPTION exndescs   (Spec.Exception (Vector.fromList exndescs))
-         | STRUCTURE strdescs   (Spec.Structure (Vector.fromList strdescs))
-         | INCLUDE sigexp       (Spec.IncludeSigexp sigexp)
-         | INCLUDE sigid sigids (* p. 59 *)
-           (Spec.IncludeSigids (Vector.fromList (sigid :: sigids)) )
-         | sharespec
-           (Spec.Sharing {spec = Spec.makeRegion' (Spec.Empty,
-                                                   sharespecleft,
-                                                   sharespecright),
-                          equations = (Vector.new1
-                                       (Equation.makeRegion' (sharespec,
-                                                              sharespecleft,
-                                                              sharespecright)))})
-
-sharespec : SHARING TYPE longtyconeqns (Equation.Type longtyconeqns)
-          | SHARING longstrideqns      (Equation.Structure longstrideqns)
-
-longstrideqns : longstrid EQUALOP longstrid ([longstrid1,longstrid2])
-              | longstrid EQUALOP longstrideqns (longstrid :: longstrideqns)
-
-longtyconeqns : longtycon EQUALOP longtycon ([longtycon1,longtycon2])
-              | longtycon EQUALOP longtyconeqns (longtycon :: longtyconeqns)
-
-strdescs : strid COLON sigexp' strdescs'  (augment (strid, sigexp', strdescs'))
-
-strdescs' :                             (([], defaultPos, []))
-          | AND strdescs                (([], defaultPos, strdescs))
-          | WHERE wherespec strdescs''  (cons1 (wherespec, strdescs''))
-
-strdescs'' : strdescs'                 (strdescs')
-           | AND wherespec strdescs''  (cons1 (wherespec, strdescs''))
-
-typdescs : typdesc               ([typdesc])
-         | typdesc AND typdescs  (typdesc :: typdescs)
-
-typdesc : tyvars tycon ({tyvars = tyvars,
-                         tycon = tycon})
-
-valdescs : valdesc                ([valdesc])
-         | valdesc AND valdescs   (valdesc :: valdescs)
-
-valdesc : var COLON ty  (Con.ensureSpecify (Vid.toCon (Vid.fromVar var))
-                         ; (var, ty))
-
-exndescs : exndesc                ([exndesc])
-         | exndesc AND exndescs   (exndesc :: exndescs)
-
-exndesc : con tyOpt  (Con.ensureSpecify con; (con, tyOpt))
-
-tyOpt :         (NONE)
-      | OF ty   (SOME ty)
-
-(*---------------------------------------------------*)
-(*                     Functors                      *)
-(*---------------------------------------------------*)
-
-funbinds : fctid LPAREN fctarg RPAREN sigconst EQUALOP funbinds'
-           (let val (strexp,funbinds) = funbinds'
-            in {name = fctid,
-                arg = FctArg.makeRegion' (fctarg, fctargleft, fctargright),
-                result = sigconst,
-                body = strexp}
-               :: funbinds
-            end)
-
-funbinds' : strexp1 funbinds'1  (augment1 (strexp1, funbinds'1))
-          | strexp2 funbinds'2  ((strexp2, funbinds'2))
-
-funbinds'1 : funbinds'2                   ([], funbinds'2left, funbinds'2)
-           | WHERE wherespec funbinds'1'  (cons1 (wherespec,funbinds'1'))
-
-funbinds'2 :               ([])
-           | AND funbinds  (funbinds)
-
-funbinds'1' : funbinds'1                 (funbinds'1)
-            | AND wherespec funbinds'1'  (cons1 (wherespec,funbinds'1'))
-
-fctarg : strid COLON sigexp  (FctArg.Structure (strid, sigexp))
-       | specs               (FctArg.Spec specs)
+   : decnolocal (decnolocal)
 
 (*---------------------------------------------------*)
 (*                   Declarations                    *)
 (*---------------------------------------------------*)
 
-decs :                  (Dec.makeRegion' (Dec.SeqDec (Vector.new0 ()),
-                                          defaultPos, defaultPos))
-     | dec decs         (Dec.sequence (dec,decs))
+decs :                  ([])
+     | dec decs         (dec :: decs)
      | SEMICOLON decs   (decs)
 
-dec : decnode (Dec.makeRegion' (decnode, decnodeleft, decnoderight))
+dec : decnode (decnode)
 
 decnode : decnolocal              (decnolocal) 
-        | LOCAL decs IN decs END  (Dec.Local (decs1,decs2))
+        | LOCAL decs IN decs END  (A.LocalDec 
+									{attr=[],dec1=decs1,dec2=decs2))
 
 decnolocal
-        : VAL valbindTop          (Dec.Val {tyvars = Vector.new0 (),
-                                            vbs = #1 valbindTop,
-                                            rvbs = #2 valbindTop})
-        | VAL tyvarseq valbindTop  (Dec.Val {tyvars = tyvarseq,
-                                             vbs = #1 valbindTop,
-                                             rvbs = #2 valbindTop})
-        | FUN funs              (Dec.Fun (Vector.new0 (), Vector.fromList funs))
-        | FUN tyvarseq funs     (Dec.Fun (tyvarseq, Vector.fromList funs))
-        | TYPE typBind          (Dec.Type typBind)
-        | DATATYPE datatypeRhs  (Dec.Datatype datatypeRhs)
-        | ABSTYPE datBind WITH decs END   (Dec.Abstype {datBind = datBind,
+        : VAL valbindTop          (A.ValDec {attr=[],
+											tyvars = [],
+                                            valBind = #1 valbindTop,
+                                            recBind = #2 valbindTop})
+        | VAL tyvarseq valbindTop  (A.ValDec {attr=[],
+											tyvars = [],
+                                            valBind = #1 valbindTop,
+                                            recBind = #2 valbindTop})
+        | FUN funs              (A.FunDec {attr=[],
+											tyvars=[],
+											clauses=funs})
+        | FUN tyvarseq funs     (A.FunDec {attr=[],
+											tyvars=tyvarseq,
+											clauses=funs})
+        | TYPE typBind          (A.TypeDec {attr=[],tyBind=typBind})
+        | DATATYPE datatypeRhs  (A.DatatypeDec 
+									{attr=[],tyBind=datatypeRhs})
+        | ABSTYPE datBind WITH decs END   (A.AbstypeDec {tyBind = datBind,
                                                         body = decs})
         | EXCEPTION ebs
-          (Dec.Exception (Vector.fromList ebs))
-        | OPEN longstrids       (Dec.Open (Vector.fromList longstrids))
-        | fixity vids           (Dec.Fix {fixity = fixity,
-                                          ops = Vector.fromList vids})
-        | OVERLOAD priority var COLON ty AS longvidands
-                                (Dec.Overload (priority, 
-                                               var,
-                                               Vector.new0 (),
-                                               ty,
-                                               Vector.fromList longvidands))
+          (A.ExceptionDec {attr=[]))
+        | OPEN longstrids       (A.OpenDec {attr=[]})
+        | fixity vids           (A.FixDec {attr=[],fixity = fixity,
+                                          ops = vids})
+        | OVERLOAD priority var COLON ty AS longvidands (A.NullDec)
 
-valbindTop : valbind (let
-                         val (vbs, rvbs) = valbind
-                      in
-                         (Vector.fromList vbs,
-                          Vector.fromList rvbs)
-                      end)
+valbindTop : valbind (valbind)
 
 valbind : pat EQUALOP exp valbindRest
           (let
