@@ -1,6 +1,8 @@
 $(SML_LIB)/basis/basis.mlb
 $(MLTON_ROOT)/mlyacc-lib/mlyacc-lib.mlb
 debug.sml
+ast/symbol.sml
+ast/ast.sml
 frontend/untyped_ast.sml
 frontend/source-pos.sig
 frontend/source-pos.sml
