@@ -86,6 +86,7 @@ struct
 		  | RecordTy of (exp * ty) list
 		  | UnitTy
 		  | TyConTy of ty * ty list
+		  | StrTy of symbol list
 		 and attr =
 		 	Left of int
 		  | Right of int

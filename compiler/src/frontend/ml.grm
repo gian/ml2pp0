@@ -13,8 +13,7 @@ type clause = A.clause
 
 type match = A.match
 
-fun ensureNonqualified [s] = s
-  | ensureNonqualified _ = raise Fail "expected nonqualified identifier"
+fun ensureNonqualified s = s
 
   %%
   %term
@@ -103,13 +102,10 @@ fun ensureNonqualified [s] = s
        | idEqual of A.symbol
        | idNoAsterisk of A.symbol
        | int of int 
-       | longcon of unit 
-       | longid of A.symbol list
-       | longidEqual of A.symbol list
-       | longidNoAsterisk of A.symbol list
-       | longstrid of unit
-       | longstrideqns of unit
-       | longstrids of unit
+       | longcon of A.symbol 
+       | longid of A.symbol
+       | longidEqual of A.symbol
+       | longidNoAsterisk of A.symbol
        | longtycon of A.ty
        | longtyconeqns of A.ty list
        | longvidands of A.symbol list
@@ -252,7 +248,9 @@ fun ensureNonqualified [s] = s
 
 program: expsAndTopdecs (expsAndTopdecs)
 
-expsAndTopdecs:
+expsAndTopdecs: decs (decs)
+
+(*expsAndTopdecs:
     exp SEMICOLON expsAndTopdecs ((A.ExpDec {attr=[],exp=exp}) :: expsAndTopdecs)
   | topdecs (topdecs)
 
@@ -264,7 +262,7 @@ topdecs:
 topdec : topdecnode (topdecnode)
 
 topdecnode
-   : decnolocal  (decnolocal)
+   : decs  (decs)*)
 
 (*---------------------------------------------------*)
 (*                   Declarations                    *)
@@ -303,7 +301,6 @@ decnolocal
                                                         body = decs})
         | EXCEPTION ebs
           (A.ExceptionDec {attr=[]})
-        | OPEN longstrids       (A.OpenDec {attr=[]})
         | fixity vids           (A.FixDec {attr=[],fixity = fixity,
                                           ops = vids})
 
@@ -636,19 +633,13 @@ idEqual : id      (id)
 
 longid
    : longidNoAsterisk (longidNoAsterisk)
-   | ASTERISK  ([S.asterisk])
+   | ASTERISK  (S.asterisk)
 
 longidNoAsterisk
-   : LONGID
-     (let
-         val syms = 
-		 	List.map S.fromString (String.tokens (fn #"." => true | _ => false) LONGID)
-      in
-         syms
-      end)
+   : LONGID						(S.fromString LONGID)
 
 longidEqual : longid   (longid)
-            | EQUALOP  ([S.equal])
+            | EQUALOP  (S.equal)
 
 vid : idEqual                  (idEqual)
 vidNoEqual : id                (id)
@@ -663,3 +654,10 @@ field : id                     (A.Var {attr=[],name=id})
                                    then raise Fail "nonpositive field"
                                     else
                                        int - 1))
+
+longtycon : longidNoAsterisk 	(A.VarTy longidNoAsterisk) 
+longvid : longidEqual      		(longidEqual) 
+longvidNoEqual : longid    		(longid) 
+longcon : longid           		(longid) 
+
+

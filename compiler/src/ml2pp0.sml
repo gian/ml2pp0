@@ -20,7 +20,7 @@ struct
 
 	fun lml (smlfile) = 
     let 
-	    val ast = Parse.parse smlfile
+	    val ast = Parse.parse' smlfile
 	in
 		()
 	end
