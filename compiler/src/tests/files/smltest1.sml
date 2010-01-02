@@ -25,3 +25,9 @@ fun testF x =
 		p
 	end
 
+type k = int * int * string
+
+type r = {hello : string, foo : int, bar : real}
+
+
+
