@@ -22,7 +22,7 @@ type lexarg = {source: Source.t}
 type arg = lexarg
 type ('a,'b) token = ('a,'b) Tokens.token
 
-val charlist: int list ref = ref []
+val charlist: char list ref = ref []
 val colNum: int ref = ref 0
 val commentLevel: int ref = ref 0
 val commentStart = ref SourcePos.bogus
@@ -31,47 +31,40 @@ val lineNum: int ref = ref 0
 val stringStart = ref SourcePos.bogus
 val stringtype = ref false
 
+val source = Source.new "_dummy_"
+
 fun lineDirective (source, file, yypos) =
    Source.lineDirective (source, file,
                          {lineNum = !lineNum,
                           lineStart = yypos - !colNum})
 
 fun addString (s: string) =
-   charlist :=
-   String.fold (s, !charlist, fn (c, ac) => (Char.ord c) :: ac)
+   charlist := !charlist @ (String.explode s)
 
-fun addChar (c: char) = addString (String.fromChar c)
+fun addChar (c: char) = addString (String.str c)
 
 fun inc (ri as ref (i: int)) = ri := i + 1
 
 fun dec (ri as ref (i: int)) = ri := i - 1
 
-fun error (source, left, right, msg) = 
-   Control.errorStr (Region.make {left = Source.getPos (source, left),
-                                  right = Source.getPos (source, right)},
-                     msg)
+fun error (source, left, right, msg) =  raise (Fail msg)
 
-fun stringError (source, right, msg) =
-   Control.errorStr (Region.make {left = !stringStart,
-                                  right = Source.getPos (source, right)},
-                     msg)
+fun stringError (source, right, msg) = raise (Fail msg)
 
-fun addOrd (i : int): unit = List.push (charlist, i)
+fun addOrd (i : int): unit = addChar (Char.chr i)
 
 fun addHexEscape (s: string, source, yypos): unit = stringError (source, yypos, "unhandled unicode escape")
    (*case StringCvt.scanString (Pervasive.IntInf.scan StringCvt.HEX) s of
       NONE => stringError (source, yypos, "illegal unicode escape")
     | SOME i => addOrd i*)
 
-val eof: lexarg -> lexresult =
-   fn {source, ...} =>
+val eof: unit -> lexresult =
+   fn () =>
    let
       val pos = Source.lineStart source
       val _ =
          if !commentLevel > 0
-            then Control.errorStr (Region.make {left = !commentStart,
-                                                right = pos},
-                                   "unclosed comment")
+            then raise (Fail "unclosed comment")
          else ()
    in
       Tokens.EOF (pos, pos)
@@ -99,14 +92,14 @@ fun tok (t, s, l, r) =
 fun tok' (t, x, s, l) = tok (fn (l, r) => t (x, l, r), s, l, l + size x)
 
 fun int (yytext, drop, source, yypos, {negate: bool}, radix) =
-   Tokens.INT ({digits = String.dropPrefix (yytext, drop),
+   Tokens.INT ({digits = String.extract (yytext, drop, NONE),
                 negate = negate,
                 radix = radix},
                Source.getPos (source, yypos),
                Source.getPos (source, yypos + size yytext))
 
 fun word (yytext, drop, source, yypos, radix) =
-   Tokens.WORD ({digits = String.dropPrefix (yytext, drop),
+   Tokens.WORD ({digits = String.extract (yytext, drop, NONE),
                  radix = radix},
                 Source.getPos (source, yypos),
                 Source.getPos (source, yypos + size yytext))
@@ -116,7 +109,6 @@ fun word (yytext, drop, source, yypos, radix) =
 %reject
 %s A S F L LL LLC LLCQ;
 %header (functor MLLexFun (structure Tokens : ML_TOKENS));
-%arg ({source});
 alphanum=[A-Za-z'_0-9]*;
 alphanumId=[A-Za-z]{alphanum};
 sym=[-!%&$+/:<=>?@~`^|#*]|"\\";
@@ -285,7 +277,7 @@ hexnum={hexDigit}+;
 <A>.            => (continue ());
 
 <S>\"           => (let
-                       val s = Vector.fromListRev (!charlist)
+                       val s = String.implode (!charlist)
                        val _ = charlist := nil
                        fun make (t, v) =
                           t (v, !stringStart, Source.getPos (source, yypos + 1))
@@ -295,12 +287,12 @@ hexnum={hexDigit}+;
                           then make (Tokens.STRING, s)
                        else
                           make (Tokens.CHAR,
-                                if 1 <> Vector.length s
+                                if 1 <> size s
                                    then (error
                                          (source, yypos, yypos + 1,
                                           "character constant not length 1")
-                                         ; 0)
-                                else Vector.sub (s, 0))
+                                         ; #"0")
+                                else String.sub (s, 0))
                     end);
 <S>\\a          => (addChar #"\a"; continue ());
 <S>\\b          => (addChar #"\b"; continue ());

@@ -7,6 +7,7 @@
  *)
 
 structure A = Ast
+structure S = Symbol
 
 type clause = A.clause
 
@@ -17,13 +18,13 @@ fun ensureNonqualified [s] = s
 
   %%
   %term
-      CHAR of int
+      CHAR of char 
     | INT of {digits: string,
               negate: bool,
               radix: StringCvt.radix}
     | LONGID of string
     | REAL of string
-    | STRING of int vector
+    | STRING of string 
     | TYVAR of string
     | WORD of {digits: string,
                radix: StringCvt.radix}
@@ -65,9 +66,9 @@ fun ensureNonqualified [s] = s
        | datatypeRhsNoWithtype of A.bind list
        | datatypeRhsnode of A.bind list
        | datatypeRhsnodeNoWithtype of A.bind list
-       | db of A.ty * (A.exp * A.ty option) list
-       | dbs of (A.ty * (A.exp * A.ty option) list) list
-       | dbs' of (A.ty * (A.exp * A.ty option) list) list
+       | db of A.bind
+       | dbs of A.bind list
+       | dbs' of A.bind list
        | dec of A.dec
        | decnode of A.dec
        | decnolocal of A.dec
@@ -87,7 +88,7 @@ fun ensureNonqualified [s] = s
        | exp_list of A.exp list
        | exp_ps of A.exp list
        | expnode of A.exp
-       | expsAndTopdecs of A.dec list list
+       | expsAndTopdecs of A.dec list
        | fctarg of unit
        | fctid of unit
        | field of A.exp
@@ -121,15 +122,15 @@ fun ensureNonqualified [s] = s
        | pat of A.pat
        | pat_2c of A.pat list
        | patitem of A.pat
-       | patitems of A.pat list
+       | patitems of A.pat list * bool
 	   | patnode of A.pat
        | pats of A.pat list
        | program of A.program
-       | repl of A.bind
+       | repl of A.bind list
        | rule of A.pat * A.exp
        | rules of match
-       | rvalbind of (A.pat * match) list
-       | rvalbindRest of (A.pat * match) list
+       | rvalbind of A.bind list
+       | rvalbindRest of A.bind list
 (*     | sdec of unit
        | sdecs of unit
        | sdecsPlus of unit
@@ -171,7 +172,7 @@ fun ensureNonqualified [s] = s
        | tlabels  of (A.exp * A.ty) list
        | topdec of A.dec
        | topdecnode of A.dec
-       | topdecs of A.dec list list
+       | topdecs of A.dec list
        | tuple_ty of A.ty list
        | ty of A.ty
        | ty' of A.ty
@@ -202,7 +203,7 @@ fun ensureNonqualified [s] = s
        | wherespec of unit
        | wherespecs of unit
        | wherespecs' of unit
-       | withtypes of A.bind
+       | withtypes of A.bind list
        | word of int
 
 %verbose
@@ -239,7 +240,7 @@ fun ensureNonqualified [s] = s
         SEMICOLON -> COMMA | COMMA -> SEMICOLON |
         -> IN LONGID END | -> ELSE LONGID
 
-%value CHAR (Char.ord #"a")
+%value CHAR (#"a")
 %value INT ({digits = "0", negate = false, radix = StringCvt.DEC})
 %value LONGID ("bogus")
 %value REAL ("13.0")
@@ -252,13 +253,13 @@ fun ensureNonqualified [s] = s
 program: expsAndTopdecs (expsAndTopdecs)
 
 expsAndTopdecs:
-    exp SEMICOLON expsAndTopdecs ([A.ExpDec {attr=[],exp=exp}] :: expsAndTopdecs)
+    exp SEMICOLON expsAndTopdecs ((A.ExpDec {attr=[],exp=exp}) :: expsAndTopdecs)
   | topdecs (topdecs)
 
 topdecs:
       ([])
   | topdec topdecs (topdec :: topdecs)
-  | SEMICOLON expsAndTopdecs ([] :: expsAndTopdecs)
+  | SEMICOLON expsAndTopdecs (expsAndTopdecs)
 
 topdec : topdecnode (topdecnode)
 
@@ -297,7 +298,8 @@ decnolocal
         | TYPE typBind          (A.TypeDec {attr=[],tyBind=typBind})
         | DATATYPE datatypeRhs  (A.DatatypeDec 
 									{attr=[],tyBind=datatypeRhs})
-        | ABSTYPE datBind WITH decs END   (A.AbstypeDec {tyBind = datBind,
+        | ABSTYPE datBind WITH decs END   (A.AbstypeDec {attr=[],
+														tyBind = datBind,
                                                         body = decs})
         | EXCEPTION ebs
           (A.ExceptionDec {attr=[]})
@@ -311,7 +313,7 @@ valbind : pat EQUALOP exp valbindRest
           (let
               val (vbs, rvbs) = valbindRest
            in
-              (A.ValBind (pat,exp) :: vbs,
+              ((A.ValBind (pat,exp)) :: vbs,
                rvbs)
            end)
         | REC rvalbind                 (([], rvalbind))
@@ -379,7 +381,7 @@ int : INT
    (let
        val {digits, negate, radix} = INT
     in
-       case StringCvt.scanString (fn r => Integer.scan (radix, r)) digits of
+       case Int.fromString digits of
           NONE => raise (Fail "parser saw invalid int")
         | SOME i => if negate then ~ i else i
     end)
@@ -388,7 +390,7 @@ word : WORD
    (let
        val {digits, radix} = WORD
     in
-       case StringCvt.scanString (fn r => Integer.scan (radix, r)) digits of
+       case Int.fromString digits of
           NONE => raise (Fail "parser saw invalid word")
         | SOME i => i
     end)
@@ -420,7 +422,7 @@ repl : tyvars tycon EQUALOP DATATYPE longtycon
        (if length tyvars = 0
            then ()
         else raise (Fail "nonempty tyvars in datatype repl")
-        ; A.DatatypeReplBind {lhs = tycon, rhs = longtycon})
+        ; [A.DatatypeReplBind {lhs = tycon, rhs = longtycon}])
 
 datBind
    : dbs withtypes	(dbs @ withtypes)
@@ -465,7 +467,7 @@ elabels : elabel COMMA elabels  (elabel :: elabels)
 exp_ps  : exp SEMICOLON exp     ([exp1, exp2])
         | exp SEMICOLON exp_ps  (exp :: exp_ps)
 
-exp : expnode ((expnode, expnodeleft, expnoderight))
+exp : expnode (expnode)
 
 expnode : exp HANDLE match      (A.Handle {attr=[],exp=exp, match=match})
         | exp ORELSE exp        (A.BinOp
@@ -473,7 +475,7 @@ expnode : exp HANDLE match      (A.Handle {attr=[],exp=exp, match=match})
         | exp ANDALSO exp       (A.BinOp 
 								{attr=[],opr=A.BAnd,lhs=exp1,rhs=exp2})
         | exp COLON ty          (A.Constraint {attr=[],exp=exp,ty=ty})
-        | app_exp               (app_exp)
+        | app_exp               (A.App {attr=[],exps=app_exp})
         | FN match              (A.Fn {attr=[],match=match})
         | CASE exp OF match     (A.Case {attr=[],exp=exp,match=match})
         | WHILE exp DO exp      (A.While {attr=[],test=exp1,exp = exp2})
@@ -500,7 +502,7 @@ aexp    : OP longvid            (A.Op {attr=[],symbol = longvid})
         | LBRACKET RBRACKET           (A.List {attr=[],exps=[]})
         | LET decs IN exp END   (A.Let {attr=[],decs=decs,exp=exp})
         | LET decs IN exp_ps END
-            (A.Let {attr=[],decs=decs,exp=(A.Seq {attr=[], exp=exp_ps})})
+            (A.Let {attr=[],decs=decs,exp=(A.Seq {attr=[], exps=exp_ps})})
 
 exp_2c  : exp COMMA exp_2c      (exp :: exp_2c)
         | exp COMMA exp         ([exp1, exp2])
@@ -584,12 +586,12 @@ tynode  : tuple_ty      (A.TupleTy (tuple_ty))
 
 ty' : ty'node (ty'node)
 
-ty'node : tyvar                           (A.VarTy tyvar)
+ty'node : tyvar                           (tyvar)
         | LBRACE tlabels RBRACE           (A.RecordTy (tlabels))
         | LBRACE RBRACE                   (A.UnitTy)
         | LPAREN ty0_pc RPAREN longtycon  (A.TyConTy (longtycon, ty0_pc))
         | LPAREN ty RPAREN                (ty)
-        | ty' longtycon                   (A.TyConTy (longtycon, ty'))
+        | ty' longtycon                   (A.TyConTy (longtycon, [ty']))
         | longtycon                       (A.TyConTy (longtycon,[]))
 
 tlabel  : field COLON ty        (field, ty)
@@ -617,8 +619,8 @@ constOrBool
 const   : const'                (const')
 
 const'  : int                   (A.Int int)
-        | word                  (A.Word word)
-        | REAL                  (A.Real REAL)
+        | word                  (A.Word (Word32.fromInt word))
+        | REAL                  (A.Real (valOf (Real.fromString REAL)))
         | STRING                (A.String STRING)
         | CHAR                  (A.Char CHAR)
 
@@ -640,7 +642,7 @@ longidNoAsterisk
    : LONGID
      (let
          val syms = 
-		 	List.map (String.split (LONGID, #"."), S.fromString)
+		 	List.map S.fromString (String.tokens (fn #"." => true | _ => false) LONGID)
       in
          syms
       end)
@@ -652,11 +654,10 @@ vid : idEqual                  (idEqual)
 vidNoEqual : id                (id)
 vids : vid                     ([vid])
      | vid vids                (vid::vids)
-var : idEqual                  (idEqual)
-con : id                       (id)
+con : id                       (A.Var {attr=[], name=id})
 tycon : idNoAsterisk           (A.VarTy idNoAsterisk)
 tyvar : TYVAR                  (A.VarTy (S.fromString TYVAR))
-field : id                     (A.Var {attr=[],name=(#1 id)})
+field : id                     (A.Var {attr=[],name=id})
       | int                    (A.Int
                                  (if int <= 0
                                    then raise Fail "nonpositive field"

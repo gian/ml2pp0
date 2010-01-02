@@ -29,13 +29,14 @@ struct
 		  | AbstypeDec of
 		    {attr:attr list,
 			 tyBind : bind list,
-			 body : dec list list}
+			 body : dec list}
 	      | ExceptionDec of {attr : attr list}
 		  | OpenDec of {attr : attr list} 
 		  | FixDec of {attr : attr list, fixity: fixity,ops:symbol list}
 	     and exp =
 			Handle of 
 				{attr : attr list, exp : exp, match : (pat * exp) list}
+		  | App of {attr : attr list, exps : exp list}
 		  | BinOp of {attr : attr list, opr : opr, lhs: exp, rhs: exp}
 		  | Constraint of {attr : attr list, exp : exp, ty : ty}
 		  | Fn of {attr : attr list, match : (pat * exp) list}
@@ -47,7 +48,7 @@ struct
 		  | Var of {attr: attr list, name : symbol}
 		  | Selector of {attr: attr list, exp : exp}
 		  | Record of {attr: attr list, fields : (exp * exp) list}
-		  | Unit of {attr: attr list}
+		  | Unit
 		  | Seq of {attr: attr list, exps : exp list}
 		  | Tuple of {attr: attr list, exps : exp list}
 		  | List of {attr: attr list, exps : exp list}
@@ -73,7 +74,7 @@ struct
 		  | FieldPat of exp * pat
 		 and bind =
 			ValBind of pat * exp
-		  | ValRecBind of pat * (pat * exp) list
+		  | ValRecBind of pat * ((pat * exp) list)
 		  | TypeBind of {def : ty, tycon : ty, tyvars : ty list}
 		  | DatatypeReplBind of {lhs : ty, rhs : ty}
 		  | DatatypeBind of 
@@ -84,7 +85,7 @@ struct
 		  | VarTy of symbol
 		  | RecordTy of (exp * ty) list
 		  | UnitTy
-		  | TyConTy of symbol * ty list
+		  | TyConTy of ty * ty list
 		 and attr =
 		 	Left of int
 		  | Right of int
@@ -101,6 +102,6 @@ struct
 	
 	type match = (pat * exp) list
 
-	type program = dec list list
+	type program = dec list
 
 end

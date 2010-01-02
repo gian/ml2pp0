@@ -7,4 +7,6 @@ struct
 
 	fun fromString s = s
 
+	val asterisk = "*";
+	val equal = "=";
 end

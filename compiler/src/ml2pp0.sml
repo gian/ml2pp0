@@ -1,6 +1,6 @@
 structure Lml =
 struct
-  fun initialise () =
+ (* fun initialise () =
   	let
 		val _ = Optimiser.addPass ("nullOpt", fn x => x)
 		val _ = Optimiser.addPass ("constFold", ConstFold.optConstFold)
@@ -16,14 +16,22 @@ struct
 		val _ = print (TypedAST.pptypedast ast')
 	in
 		()
+	end *)
+
+	fun lml (smlfile) = 
+    let 
+	    val ast = Parse.parse smlfile
+	in
+		()
 	end
+
 end
 
 structure Main =
 struct
 	fun main () = 
 		let 
-			val _ = Lml.initialise ()
+			(*val _ = Lml.initialise ()*)
 			val args = CommandLine.arguments ()
 		in (Lml.lml (hd args);()) end
 end

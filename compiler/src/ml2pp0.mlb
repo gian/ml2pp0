@@ -18,7 +18,6 @@ types/typed_ast.sml
 types/hm.sml
 frontend/ml.lex.sml
 frontend/parse.sml
-types/behav.sml
 optimiser/optimiser.sig
 optimiser/optimiser.sml
 optimiser/constfold.sml
