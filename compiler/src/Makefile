@@ -4,6 +4,7 @@ SOURCES =			\
 	frontend/ml.lex.sml \
 	frontend/*.sml	\
 	types/*.sml	\
+	ast/*.sml	\
 	lib/*.sml	\
 	optimiser/*.sml	\
 	debug.sml	\

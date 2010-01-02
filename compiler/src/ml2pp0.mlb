@@ -10,6 +10,7 @@ frontend/region.sig
 frontend/region.sml
 frontend/source.sig
 frontend/source.sml
+ast/prettyprint.sml
 lib/set.sml
 lib/lts.sml
 frontend/ml.grm.sig
