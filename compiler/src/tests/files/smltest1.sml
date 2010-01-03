@@ -14,7 +14,7 @@ fun f 0 = 11
   | f x = x * x + 10
 and g x = x + x
 
-val p = fn x => x + 1
+val p = (fn x => x + 1) (f (g 123))
 
 val myString' = "hello, world"
 
@@ -29,5 +29,6 @@ type k = int * int * string
 
 type r = {hello : string, foo : int, bar : real}
 
+val j = f (19*5+6-4)
 
 

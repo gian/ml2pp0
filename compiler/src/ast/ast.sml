@@ -97,6 +97,7 @@ struct
 		 and opr =
 		 	BOr
 		  | BAnd
+		  | SOpr of symbol
 		 withtype clause = {pats : pat list,
     	           resultType : ty option,
         	       body : exp}

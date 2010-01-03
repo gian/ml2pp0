@@ -81,7 +81,9 @@ struct
 	  | ppty (TyConTy (t,t')) = 
 	  	"(" ^ (String.concatWith "," (map ppty t')) ^ ") " ^ ppty t
 	  | ppty _ = "<unpretty-printed ty>"
-	and ppopr t = "<opr>"
+	and ppopr BOr = "orelse"
+	  | ppopr BAnd = "andalso"
+	  | ppopr (SOpr s) = S.toString s
 	and ppmatch l =
 		String.concatWith "\n  | " (
 			map (fn (p,e) => pppat p ^ " => " ^ ppexp e) l

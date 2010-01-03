@@ -20,7 +20,7 @@ struct
 
 	fun lml (smlfile) = 
     let 
-	    val ast = Parse.parse' smlfile
+	    val ast = (Syntax.unflatten_ops (Parse.parse' smlfile))
 		val _ = print (PrettyPrint.prettyPrint ast)
 		val _ = print "\n"
 	in
