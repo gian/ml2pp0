@@ -36,7 +36,7 @@ struct
 	  | ppexp Unit = "()"
 	  | ppexp (Seq {exps,...}) = 
 	  		"(" ^ String.concatWith "; " (map ppexp exps) ^ ")"
-	  | ppexp (Int i) = Int.toString i
+	  | ppexp (Int i) = "int " ^ Int.toString i
 	  | ppexp (Word w) = Word32.toString w
 	  | ppexp (Real r) = Real.toString r
 	  | ppexp (String s) = "\"" ^ s ^ "\""
@@ -72,7 +72,7 @@ struct
 			" = " ^ ppexp body
 	and ppty (TupleTy t) = String.concatWith " * " (map ppty t)
 	  | ppty (ArrowTy (t,t')) = ppty t ^ " -> " ^ ppty t'
-	  | ppty (VarTy s) = S.toString s
+	  | ppty (VarTy s) = "var "^ S.toString s
 	  | ppty (RecordTy l) = 
 	  	"{" ^ (String.concatWith ", " 
 			(map (fn (x,y) => ppexp x ^ " : " ^ ppty y) l)) ^ "}"

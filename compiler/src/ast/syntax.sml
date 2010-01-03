@@ -25,15 +25,30 @@ struct
 
 	fun unflatten_ops prog =
 	let
-		val _ = print "UNFLATTEN\n"
-
 		fun id x = x
 		
-		val infixes = ref [] : A.symbol list ref
+		val infixes = ref [
+			S.fromString "*",
+			S.fromString "/",
+			S.fromString "mod",
+			S.fromString "div",
+			S.fromString "+",
+			S.fromString "-",
+			S.fromString "^",
+			S.fromString "::",
+			S.fromString "@",
+			S.fromString "<>",
+			S.fromString ">",
+			S.fromString ">=",
+			S.fromString "<",
+			S.fromString "<=",
+			S.fromString ":=",
+			S.fromString "o",
+			S.fromString "before"
+		] : A.symbol list ref
 
 		fun decfun (d as A.FixDec {attr,fixity=A.Infix _,ops}) =
 			let
-				val _ = print "DecFun"
 				val _ = infixes := !infixes @ ops	
 			in
 				d
@@ -54,7 +69,6 @@ struct
 
 		fun expfun k (d as A.App {attr,exps}) =
 			let
-				val _ = print "EXPFUN1\n"
 				fun splitOnOp s lhs [] = A.App {attr=attr,exps=lhs}
 				  | splitOnOp s lhs (h::t) =
 				  	if (fn (A.Var {name=x,...}) => x = s | _ => false) h
@@ -68,12 +82,16 @@ struct
 			in
 				splitOnOp k [] exps
 			end
-		  | expfun k d =
-				(print "EXPFUN1\n"; d)
+		  | expfun k (d as A.BinOp {attr,opr,lhs,rhs}) =
+		  		A.BinOp {attr=attr,
+						 opr=opr,
+						 lhs=expfun k lhs,
+						 rhs=expfun k rhs}
+		  | expfun k d = d
 
 		fun f k = {
 			decfun = id,
-			expfun = expfun k,
+			expfun = k,
 			patfun = id,
 			bindfun = id,
 			tyfun = id,
@@ -81,8 +99,14 @@ struct
 			clausesfun = id,
 			clausefun = id
 		}
+
+		val prog' = List.foldl (fn (k,p) => AstOps.ast_map (f (expfun k)) p) prog (!infixes)
+
+
+		fun single_app (A.App {attr,exps=[e]}) = e
+		  | single_app k = k
 	in
-		List.foldl (fn (k,p) => AstOps.ast_map (f k) p) prog (!infixes)
+		AstOps.ast_map (f single_app) prog'
 	end
 
 end

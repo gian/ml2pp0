@@ -13,7 +13,7 @@ struct
 		clausefun : clause -> clause
 	}
 
-	fun ast_map_decs (f:ast_map_funs) x = map (fn k => (print "MAP\n"; ast_map_dec f k)) x
+	fun ast_map_decs (f:ast_map_funs) x = map (fn k => (ast_map_dec f k)) x
 	and ast_map_dec (f:ast_map_funs) (e as ExpDec {attr,exp}) = 
 	  	(#decfun f) (ExpDec {attr=attr,exp=ast_map_exp f exp})
 	  | ast_map_dec f (e as NullDec) = (#decfun f) NullDec

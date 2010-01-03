@@ -21,9 +21,11 @@ struct
 	fun lml (smlfile) = 
     let 
 	    val ast = (Syntax.unflatten_ops (Parse.parse' smlfile))
+		val _ = print "AST DUMP:\n"
 		val _ = print (PrettyPrint.prettyPrint ast)
 		val _ = print "\n"
 		val l = map Intermediate.translate ast
+		val _ = print "CODE DUMP:\n"
 		val _ = app (fn (p,i) => print (Intermediate.emit i)) l
 	in
 		()
