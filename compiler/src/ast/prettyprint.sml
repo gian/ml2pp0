@@ -83,6 +83,23 @@ struct
 	  | ppty _ = "<unpretty-printed ty>"
 	and ppopr BOr = "orelse"
 	  | ppopr BAnd = "andalso"
+	  | ppopr Plus = "+"
+	  | ppopr Minus = "-"
+	  | ppopr Times = "*"
+	  | ppopr Div = "div"
+	  | ppopr RDiv = "/"
+	  | ppopr StrConcat = "^"
+	  | ppopr Cons = "::"
+	  | ppopr Mod = "mod"
+	  | ppopr Equal = "="
+	  | ppopr NEqual = "<>"
+	  | ppopr LT = "<"
+	  | ppopr GT = ">"
+	  | ppopr LTEqual = "<="
+	  | ppopr GTEqual = ">="
+	  | ppopr Assign = ":="
+	  | ppopr Compose = "o"
+	  | ppopr Before = "before"
 	  | ppopr (SOpr s) = S.toString s
 	and ppmatch l =
 		String.concatWith "\n  | " (

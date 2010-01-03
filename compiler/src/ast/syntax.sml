@@ -1,6 +1,27 @@
 structure Syntax =
 struct
 	structure A = Ast
+	structure S = Symbol
+
+	fun convOpr "+" = A.Plus
+	  | convOpr "-" = A.Minus
+	  | convOpr "*" = A.Times
+	  | convOpr "div" = A.Div
+	  | convOpr "/" = A.RDiv
+	  | convOpr "^" = A.StrConcat
+	  | convOpr "::" = A.Cons
+	  | convOpr "@" = A.Concat
+	  | convOpr "mod" = A.Mod
+	  | convOpr "=" = A.Equal
+	  | convOpr "<>" = A.NEqual
+	  | convOpr "<" = A.LT
+	  | convOpr ">" = A.GT
+	  | convOpr "<=" = A.LTEqual
+	  | convOpr ">=" = A.GTEqual
+	  | convOpr ":=" = A.Assign
+	  | convOpr "o" = A.Compose
+	  | convOpr "before" = A.Before
+	  | convOpr s = A.SOpr (S.fromString s)
 
 	fun unflatten_ops prog =
 	let
@@ -39,7 +60,7 @@ struct
 				  	if (fn (A.Var {name=x,...}) => x = s | _ => false) h
 					then 
 						A.BinOp {attr=[], 
-								 opr=A.SOpr s, 
+								 opr=convOpr (S.toString s), 
 								 lhs=A.App {attr=[],exps=lhs}, 
 								 rhs=splitOnOp s [] t}
 					else

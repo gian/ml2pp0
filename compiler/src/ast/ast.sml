@@ -98,6 +98,25 @@ struct
 		 	BOr
 		  | BAnd
 		  | SOpr of symbol
+		  | Plus
+		  | Minus
+		  | Times
+		  | Div
+		  | RDiv
+		  | StrConcat
+		  | Cons
+		  | Concat
+		  | Mod
+		  | Equal
+		  | NEqual
+		  | LT
+		  | GT
+		  | LTEqual
+		  | GTEqual
+		  | Assign
+		  | Compose
+		  | Before
+
 		 withtype clause = {pats : pat list,
     	           resultType : ty option,
         	       body : exp}

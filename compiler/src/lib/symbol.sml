@@ -3,6 +3,7 @@ sig
   eqtype symbol
   val symbol : string -> symbol
   val name : symbol -> string
+  val hash : symbol -> int
   type 'a table
   val empty : 'a table
   val enter : 'a table * symbol * 'a -> 'a table
@@ -40,6 +41,7 @@ struct
 		  end
 
   fun name(s,n) = s
+  fun hash(s,n) = n
 
   val toString = name
 

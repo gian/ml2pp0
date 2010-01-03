@@ -6,6 +6,7 @@ SOURCES =			\
 	types/*.sml	\
 	ast/*.sml	\
 	lib/*.sml	\
+	codegen/*.sml \
 	optimiser/*.sml	\
 	debug.sml	\
 	ml2pp0.sml		\

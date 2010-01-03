@@ -28,6 +28,7 @@ optimiser/optimiser.sig
 optimiser/optimiser.sml
 optimiser/constfold.sml
 tests/test.sml
+codegen/intermediate.sml
 codegen/codegen.sml
 tests/codegen_tests.sml
 tests/optimiser_tests.sml

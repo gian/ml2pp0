@@ -23,6 +23,8 @@ struct
 	    val ast = (Syntax.unflatten_ops (Parse.parse' smlfile))
 		val _ = print (PrettyPrint.prettyPrint ast)
 		val _ = print "\n"
+		val l = map Intermediate.translate ast
+		val _ = app (fn (p,i) => print (Intermediate.emit i)) l
 	in
 		()
 	end
