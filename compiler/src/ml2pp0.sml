@@ -1,13 +1,13 @@
 structure Lml =
 struct
- (* fun initialise () =
+ fun initialise () =
   	let
 		val _ = Optimiser.addPass ("nullOpt", fn x => x)
-		val _ = Optimiser.addPass ("constFold", ConstFold.optConstFold)
+	(*	val _ = Optimiser.addPass ("constFold", ConstFold.optConstFold) *)
 	in
 		()
 	end
-
+(*
   fun lml "-tests" = ML2PP0Tests.run_all_tests() 
    | lml (smlfile) = 
     let 
@@ -24,7 +24,8 @@ struct
 		val _ = print "AST DUMP:\n"
 		val _ = print (PrettyPrint.prettyPrint ast)
 		val _ = print "\n"
-		val l = map Intermediate.translate ast
+		val ast2 = Optimiser.runAllPasses ast
+		val l = map Intermediate.translate ast2
 		val _ = print "CODE DUMP:\n"
 		val _ = app (fn (p,i) => print (Intermediate.emit i)) l
 	in
@@ -37,7 +38,7 @@ structure Main =
 struct
 	fun main () = 
 		let 
-			(*val _ = Lml.initialise ()*)
+			val _ = Lml.initialise ()
 			val args = CommandLine.arguments ()
 		in (Lml.lml (hd args);()) end
 end

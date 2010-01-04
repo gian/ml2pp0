@@ -24,9 +24,7 @@ types/typed_ast.sml
 types/hm.sml
 frontend/ml.lex.sml
 frontend/parse.sml
-optimiser/optimiser.sig
 optimiser/optimiser.sml
-optimiser/constfold.sml
 tests/test.sml
 codegen/intermediate.sml
 codegen/codegen.sml
