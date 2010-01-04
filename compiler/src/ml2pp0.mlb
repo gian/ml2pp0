@@ -6,8 +6,11 @@ lib/table.sig
 lib/table.sml
 lib/symbol.sml
 ast/ast.sml
+types/types.sml
 ast/astops.sml
 ast/syntax.sml
+ast/prettyprint.sml
+types/elaborate.sml
 frontend/untyped_ast.sml
 frontend/source-pos.sig
 frontend/source-pos.sml
@@ -15,13 +18,11 @@ frontend/region.sig
 frontend/region.sml
 frontend/source.sig
 frontend/source.sml
-ast/prettyprint.sml
 lib/set.sml
 lib/lts.sml
 frontend/ml.grm.sig
 frontend/ml.grm.sml
 types/typed_ast.sml
-types/hm.sml
 frontend/ml.lex.sml
 frontend/parse.sml
 optimiser/optimiser.sml

@@ -36,7 +36,7 @@ struct
 	  | ppexp Unit = "()"
 	  | ppexp (Seq {exps,...}) = 
 	  		"(" ^ String.concatWith "; " (map ppexp exps) ^ ")"
-	  | ppexp (Int i) = "int " ^ Int.toString i
+	  | ppexp (Int i) = Int.toString i
 	  | ppexp (Word w) = Word32.toString w
 	  | ppexp (Real r) = Real.toString r
 	  | ppexp (String s) = "\"" ^ s ^ "\""
