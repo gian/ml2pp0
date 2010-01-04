@@ -106,9 +106,18 @@ struct
 
 		fun single_app (A.App {attr,exps=[e]}) = e
 		  | single_app k = k
-	in
-		AstOps.ast_map (f single_app) prog'
-	end
 
+		fun single_papp (A.AppPat [p]) = p
+		  | single_papp k = k
+	in
+		AstOps.ast_map {decfun=id,
+						expfun=single_app,
+						patfun=single_papp,
+						bindfun=id,
+						tyfun=id,
+						oprfun=id,
+						clausesfun=id,
+						clausefun=id} prog'
+	end
 end
 

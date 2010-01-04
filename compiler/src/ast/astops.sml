@@ -14,7 +14,8 @@ struct
 		clausefun : clause -> clause
 	}
 
-	fun ast_map_decs (f:ast_map_funs) x = map (fn k => (ast_map_dec f k)) x
+	fun ast_map_decs (f:ast_map_funs) x = 
+		map (fn k => (ast_map_dec f k)) x
 	and ast_map_dec (f:ast_map_funs) (e as ExpDec {attr,exp}) = 
 	  	(#decfun f) (ExpDec {attr=attr,exp=ast_map_exp f exp})
 	  | ast_map_dec f (e as NullDec) = (#decfun f) NullDec
@@ -68,7 +69,7 @@ struct
 												  ast_map_exp f e))
 	  | ast_map_bind f x = (#bindfun f) x
 	and ast_map_match f x = x
-	and ast_map_pat f x = x
+	and ast_map_pat f x = (#patfun f) x
 	and ast_map_clauses f c = (#clausesfun f) (map (ast_map_clause f) c)
 	and ast_map_clause f {pats,resultType,body} =
 		(#clausefun f) {pats=map (ast_map_pat f) pats,
@@ -144,5 +145,15 @@ struct
 	  		(fn (SOME (Type t)) => SOME t 
 			  | _ => NONE)
 			(List.find (fn (Type x) => true) (e_attr x))
+
+	(* FIXME - not all types are compared property *)
+	fun ty_eq (TupleTy l) (TupleTy m) = false 
+	  | ty_eq (ArrowTy (ty1, ty2)) (ArrowTy (ty1',ty2')) = 
+	  		(ty_eq ty1 ty1') andalso (ty_eq ty2 ty2')
+	  | ty_eq (VarTy s) (VarTy s') = s = s'
+	  | ty_eq (RecordTy x) (RecordTy y) = false 
+	  | ty_eq UnitTy UnitTy = false
+	  | ty_eq (TyConTy (ty,l)) (TyConTy (ty',l')) = (ty_eq ty ty')
+	  | ty_eq _ _ = false
 
 end

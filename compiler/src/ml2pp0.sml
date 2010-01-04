@@ -23,7 +23,9 @@ struct
 	    val ast = (Syntax.unflatten_ops (Parse.parse' smlfile))
 		val _ = print "AST DUMP:\n"
 		val _ = print (PrettyPrint.prettyPrint ast)
-		val _ = print "\n"
+		val _ = print "\nElaborate:\n"
+		val _ = Elaborate.constr ast
+		val _ = Elaborate.print_constr (!Elaborate.venv) 
 		val l = Intermediate.translate ast
 		val _ = print "CODE DUMP:\n"
 		val _ = print (Intermediate.emit l [] [])
