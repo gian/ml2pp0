@@ -3,8 +3,8 @@ struct
    open Absyn
    structure T = TypedAST
 
-   type env = { ty : (ty * ty) list, va : (ty * ty) list, be : (ty * behavty) list }
-   val env = ref {ty=[],va=[],be=[]} : env ref
+   type env = { ty : (ty * ty) list, va : (ty * ty) list }
+   val env = ref {ty=[],va=[]} : env ref
 
    val environments = ref [] : env list ref
 
@@ -24,19 +24,16 @@ struct
    fun pushRemapping () = remappings := ((!remapping) :: (!remappings))
    fun popRemapping () = (remapping := hd (!remappings); remappings := tl (!remappings))
 
-   fun insertTy t1 t2 = env := {ty=(t1,t2)::(#ty (!env)), va = (#va (!env)), be = (#be (!env))}
-   fun insertVal t1 t2 = env := {ty=(#ty (!env)), va = (t1,t2)::(#va (!env)), be = (#be (!env))}
-   fun insertBe t1 t2 = env := {ty=(#ty (!env)),va = (#va (!env)),be = (t1,t2)::(#be (!env))}
+   fun insertTy t1 t2 = env := {ty=(t1,t2)::(#ty (!env)), va = (#va (!env))}
+   fun insertVal t1 t2 = env := {ty=(#ty (!env)), va = (t1,t2)::(#va (!env))}
    fun lookup_h ty [] = raise (Fail ("ERROR: Could not find binding"))
      | lookup_h ty ((k,v)::t) = if ty = k then v else lookup_h ty t
    fun lookupTy t1 = lookup_h t1 (#ty (!env))
    fun lookupVal t1 = lookup_h t1 (#va (!env)) handle (Fail m) => raise (Fail (m ^ " for var " ^ ppty t1))
-   fun lookupBe t1 = lookup_h t1 (#be (!env)) handle _ => BTSkip
    fun contains_h ty [] = false
      | contains_h ty ((k,_)::t) = if ty = k then true else contains_h ty t
    fun containsTy t1 = contains_h t1 (#ty (!env))
    fun containsVal t1 = contains_h t1 (#va (!env))
-   fun containsBe t1 = contains_h t1 (#be (!env))
 
    fun isval (Integer _) = true
      | isval (String s) = true
@@ -55,10 +52,6 @@ struct
    fun ppenv [] = ""
      | ppenv (h::t) = ppenv1 h ^ ppenv t 
 
-   fun ppbenv1 (e1,e2) = ppty e1 ^ " : " ^ ppbehavty e2 ^ "\n"
-
-   fun ppbenv [] = ""
-     | ppbenv (h::t) = ppbenv1 h ^ ppbenv t 
 
    fun instTerm (TyPoly x) constr =
        let
@@ -361,7 +354,7 @@ struct
 
    fun replaceInEnv [] = ()
      | replaceInEnv ((k,v)::t) = 
-       (env := {ty=(#ty (!env)), va=(substinconstr k v (#va (!env))), be=(#be (!env))};replaceInEnv t)
+       (env := {ty=(#ty (!env)), va=(substinconstr k v (#va (!env)))};replaceInEnv t)
 
    fun fixPolyNames () =
      let
@@ -411,7 +404,7 @@ struct
               (k,v') :: envFold t
            end
       in
-           (env := {ty = (#ty (!env)), va = (envFold (#va (!env))), be = (#be (!env))}) 
+           (env := {ty = (#ty (!env)), va = (envFold (#va (!env)))}) 
       end
                 
                 

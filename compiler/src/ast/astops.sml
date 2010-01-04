@@ -1,6 +1,7 @@
 structure AstOps =
 struct
 	open Ast
+	structure T = Types
 
 	type ast_map_funs = {
 		decfun : dec -> dec,
@@ -74,5 +75,74 @@ struct
 						resultType=resultType,
 						body=ast_map_exp f body}
 	val ast_map = ast_map_decs
+
+	fun e_attr (Handle {attr,...}) = attr
+	  | e_attr (App {attr,...}) = attr
+	  | e_attr (BinOp {attr,...}) = attr
+	  | e_attr (Constraint {attr,...}) = attr
+	  | e_attr (Fn {attr,...}) = attr
+	  | e_attr (Case {attr,...}) = attr
+	  | e_attr (While {attr,...}) = attr
+	  | e_attr (If {attr,...}) = attr
+	  | e_attr (Raise {attr,...}) = attr
+	  | e_attr (Op {attr,...}) = attr
+	  | e_attr (Var {attr,...}) = attr
+	  | e_attr (Selector {attr,...}) = attr
+	  | e_attr (Record {attr,...}) = attr
+	  | e_attr (Seq {attr,...}) = attr
+	  | e_attr (Tuple {attr,...}) = attr
+	  | e_attr (List {attr,...}) = attr
+	  | e_attr (Let {attr,...}) = attr
+	  | e_attr _ = []
+
+	fun set_e_attr a (Handle r) = 
+		Handle {attr=a :: (#attr r),
+				exp= #exp r,
+				match= #match r}
+	  | set_e_attr a (App r) = 
+	  	App {attr=a :: (#attr r),
+				exps= #exps r}
+	  | set_e_attr a (BinOp r) =
+	  	BinOp {attr=a :: (#attr r),
+			   opr= #opr r,
+			   lhs= #lhs r,
+			   rhs= #rhs r}
+	  | set_e_attr a (Constraint r) =
+	  	Constraint {attr=a :: (#attr r),
+					exp= #exp r,
+					ty= #ty r}
+	  | set_e_attr a (Fn r) =
+	  	Fn {attr=a :: (#attr r),
+			match= #match r}
+	  | set_e_attr a (Case r) = Case r 
+	  | set_e_attr a (While r) = While r
+	  | set_e_attr a (If r) = If
+	  				{attr=a :: (#attr r),
+					 cond= #cond r,
+					 tbr= #tbr r,
+					 fbr = #fbr r}
+	  | set_e_attr a (Raise r) = Raise r 
+	  | set_e_attr a (Op r) = Op r
+	  | set_e_attr a (Var r) = 
+	  	Var {attr=a :: (#attr r),
+		     name= #name r}
+	  | set_e_attr a (Selector r) = Selector r
+	  | set_e_attr a (Record r) = Record r
+	  | set_e_attr a (Seq r) = Seq r
+	  | set_e_attr a (Tuple r) = Tuple r
+	  | set_e_attr a (List r) = List r
+	  | set_e_attr a (Let r) = Let r
+	  | set_e_attr a x = x
+
+	fun e_attr_ty (Int _) = SOME T.tyInt
+	  | e_attr_ty (Word _) = SOME T.tyWord
+	  | e_attr_ty (Real _) = SOME T.tyReal
+	  | e_attr_ty (String _) = SOME T.tyString
+	  | e_attr_ty (Char _) = SOME T.tyChar
+	  | e_attr_ty (Bool _) = SOME T.tyBool
+	  | e_attr_ty x = 
+	  		(fn (SOME (Type t)) => SOME t 
+			  | _ => NONE)
+			(List.find (fn (Type x) => true) (e_attr x))
 
 end

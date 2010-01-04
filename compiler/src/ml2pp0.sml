@@ -24,9 +24,9 @@ struct
 		val _ = print "AST DUMP:\n"
 		val _ = print (PrettyPrint.prettyPrint ast)
 		val _ = print "\n"
-		val l = map Intermediate.translate ast
+		val l = Intermediate.translate ast
 		val _ = print "CODE DUMP:\n"
-		val _ = app (fn (p,i) => print (Intermediate.emit i)) l
+		val _ = print (Intermediate.emit l [] [])
 	in
 		()
 	end
