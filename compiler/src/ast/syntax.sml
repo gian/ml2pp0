@@ -37,6 +37,7 @@ struct
 			S.fromString "^",
 			S.fromString "::",
 			S.fromString "@",
+			S.fromString "=",
 			S.fromString "<>",
 			S.fromString ">",
 			S.fromString ">=",
