@@ -1,9 +1,8 @@
-structure Optimiser : OPTIMISER =
+structure Optimiser =
 struct
-    type typed = TypedAST.typed
-    type 'a ast = 'a TypedAST.ast
+    type dec = Ast.dec
 
-    type optimiser_pass = string * (typed ast list -> typed ast list)
+    type optimiser_pass = string * (dec list -> dec list)
   
 	val passes = ref [] : optimiser_pass list ref
 
@@ -18,3 +17,5 @@ struct
 
     fun runAllPasses ast = List.foldl runPass ast (!passes) 
 end
+(* vim: ts=4 
+*)

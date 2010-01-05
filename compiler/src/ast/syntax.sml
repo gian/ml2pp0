@@ -83,6 +83,7 @@ struct
 			in
 				splitOnOp k [] exps
 			end
+		(* REMOVE ME *)
 		  | expfun k (d as A.BinOp {attr,opr,lhs,rhs}) =
 		  		A.BinOp {attr=attr,
 						 opr=opr,
@@ -101,7 +102,7 @@ struct
 			clausefun = id
 		}
 
-		val prog' = List.foldl (fn (k,p) => AstOps.ast_map (f (expfun k)) p) prog (!infixes)
+		val prog' = List.foldr (fn (k,p) => AstOps.ast_map (f (expfun k)) p) prog (!infixes)
 
 
 		fun single_app (A.App {attr,exps=[e]}) = e
