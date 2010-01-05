@@ -1,0 +1,10 @@
+ast/ast.sml
+ast/prettyprint.sml
+ast/symtab.sml
+types/types.sml
+ast/astops.sml
+ast/syntax_pass.sig
+ast/syntax_operator_unflatten.sml
+ast/syntax_populate_symtabs.sml
+ast/syntax_single_app.sml
+ast/syntax.sml
