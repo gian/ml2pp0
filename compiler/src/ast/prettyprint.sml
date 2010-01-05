@@ -47,9 +47,10 @@ struct
 	  | ppexp _ = "<unpretty-printed exp>"
 	and ppbinds [] = ""
 	  | ppbinds [h] = ppbind h
-	  | ppbinds (h::t) = ppbind h ^ "\n" ^ ppbinds t
+	  | ppbinds (h::t) = ppbind h ^ " \nand " ^ ppbinds t
 	and ppbind (ValBind (p,e)) = pppat p ^ " = " ^ ppexp e
-	  | ppbind (ValRecBind (p,_)) = " rec " ^ pppat p ^ " = ..."
+	  | ppbind (ValRecBind (p,b)) = "rec " ^ pppat p ^ " = fn " ^ 
+	  		(String.concatWith "\n\t| " (map (fn (pt,ex) => pppat pt ^ " => " ^ ppexp ex) b))
 	  | ppbind (TypeBind {def,tycon,tyvars}) = 
 	  	let
 			val tv = if length tyvars = 0 then "" else 
@@ -110,7 +111,7 @@ struct
 	  | pppat (AppPat []) = "AppPat "
 	  | pppat (AppPat [h]) = "AppPat " ^ pppat h
 	  | pppat (AppPat (h::t)) = pppat h ^ " (" ^ pppat (AppPat t) ^ ")"
-	  | pppat (VarPat {name,...}) = "var " ^ S.toString name
+	  | pppat (VarPat {name,...}) = S.toString name
 	  | pppat (OpPat {symbol,...}) = "op " ^ S.toString symbol
 	  | pppat (ConstPat e) = ppexp e
 	  | pppat (WildPat) = "_"

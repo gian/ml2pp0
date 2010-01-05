@@ -8,7 +8,9 @@ struct
 		("SyntaxSingleApp",
 			SyntaxSingleApp.translate ()),
 		("SyntaxPopulateSymtabs",
-			SyntaxPopulateSymtabs.translate ())
+			SyntaxPopulateSymtabs.translate ()),
+		("SyntaxFundecAnon",
+			SyntaxFundecAnon.translate ())
 	]
 
 	fun runAllPasses prog =
