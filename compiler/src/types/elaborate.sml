@@ -28,7 +28,7 @@ struct
 	(* FIXME should use the local enclosing scope, not top_level *)
 	fun fresh_ty () = VarTy (Symbol.fromString 
 								("?X." ^ Int.toString (
-									tv := !tv + 1; !tv)),Symbol.top_level)
+									tv := !tv + 1; !tv)),Symtab.top_level)
 
 	fun print_constr [] = ()
 	  | print_constr ((l,r)::t) = 

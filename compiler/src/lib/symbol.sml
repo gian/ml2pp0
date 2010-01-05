@@ -4,6 +4,7 @@ sig
   val symbol : string -> symbol
   val name : symbol -> string
   val hash : symbol -> int
+  val unhash : int -> symbol option
   type 'a table
   val empty : 'a table
   val enter : 'a table * symbol * 'a -> 'a table
@@ -16,9 +17,6 @@ sig
 
   val asterisk : symbol
   val equal : symbol
-
-  val symtab : unit -> {venv : symbol table ref, tenv : symbol table ref}
-  val top_level : {venv : symbol table ref, tenv : symbol table ref} ref
 end
 
 structure Symbol :> SYMBOL =
@@ -46,6 +44,8 @@ struct
   fun name(s,n) = s
   fun hash(s,n) = n
 
+  fun unhash n = List.find (fn (s,n') => n = n') (H.listItemsi hashtable)
+
   val toString = name
 
   val fromString = symbol
@@ -62,9 +62,5 @@ struct
 
   val asterisk = fromString "*"
   val equal = fromString "="
-
-  fun symtab () = {venv=ref empty, tenv=ref empty}
-
-  val top_level = ref (symtab ()) 
 end
 

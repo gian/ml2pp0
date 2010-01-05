@@ -6,10 +6,11 @@ lib/table.sig
 lib/table.sml
 lib/symbol.sml
 ast/ast.sml
+ast/prettyprint.sml
+ast/symtab.sml
 types/types.sml
 ast/astops.sml
 ast/syntax.sml
-ast/prettyprint.sml
 types/elaborate.sml
 frontend/source-pos.sig
 frontend/source-pos.sml

@@ -184,6 +184,13 @@ struct
 	and symtab_popl_bind scope (ValBind (p,e)) =  
 			     (ValBind (symtab_popl_pat scope p,
 				  		   symtab_popl_exp scope e))
+	  | symtab_popl_bind scope (tb as TypeBind 
+	  							{def,tycon=VarTy (sym,symtab),tyvars}) = 
+	  	let
+			val _ = Symtab.insert_t scope sym (SOME def,NONE)
+		in
+			tb
+		end
 	  | symtab_popl_bind scope x = x
 	and symtab_popl_match scope x = x
 	and symtab_popl_pat scope (AsPat (l,r)) = 
@@ -193,9 +200,13 @@ struct
 	  | symtab_popl_pat scope (AppPat l) =
 	  		AppPat (map (symtab_popl_pat scope) l)
 	  | symtab_popl_pat scope (VarPat {attr,name,symtab}) =
+	  	let
+			val _ = Symtab.insert_v scope name (NONE,NONE)
+		in
 	  		VarPat {attr=attr,name=name,symtab=scope}
+		end
 	  | symtab_popl_pat scope (OpPat {attr,symbol,symtab}) =
-	  		OpPat {attr=attr,symbol=symbol,symtab=S.top_level}
+	  		OpPat {attr=attr,symbol=symbol,symtab=Symtab.top_level}
 	  | symtab_popl_pat scope (TuplePat l) =
 	  		TuplePat (map (symtab_popl_pat scope) l)
 	  | symtab_popl_pat scope (ListPat l) =
