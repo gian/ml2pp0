@@ -11,7 +11,6 @@ ast/astops.sml
 ast/syntax.sml
 ast/prettyprint.sml
 types/elaborate.sml
-frontend/untyped_ast.sml
 frontend/source-pos.sig
 frontend/source-pos.sml
 frontend/region.sig
@@ -22,15 +21,9 @@ lib/set.sml
 lib/lts.sml
 frontend/ml.grm.sig
 frontend/ml.grm.sml
-types/typed_ast.sml
 frontend/ml.lex.sml
 frontend/parse.sml
-optimiser/optimiser.sml
 tests/test.sml
 codegen/intermediate.sml
 codegen/codegen.sml
-tests/codegen_tests.sml
-tests/optimiser_tests.sml
-tests/parse_tests.sml
-tests/ml2pp0_tests.sml
 ml2pp0.sml

@@ -16,6 +16,9 @@ sig
 
   val asterisk : symbol
   val equal : symbol
+
+  val symtab : unit -> {venv : symbol table ref, tenv : symbol table ref}
+  val top_level : {venv : symbol table ref, tenv : symbol table ref} ref
 end
 
 structure Symbol :> SYMBOL =
@@ -59,5 +62,9 @@ struct
 
   val asterisk = fromString "*"
   val equal = fromString "="
+
+  fun symtab () = {venv=ref empty, tenv=ref empty}
+
+  val top_level = ref (symtab ()) 
 end
 

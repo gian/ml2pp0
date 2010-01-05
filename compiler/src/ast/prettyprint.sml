@@ -72,7 +72,7 @@ struct
 			" = " ^ ppexp body
 	and ppty (TupleTy t) = String.concatWith " * " (map ppty t)
 	  | ppty (ArrowTy (t,t')) = ppty t ^ " -> " ^ ppty t'
-	  | ppty (VarTy s) = "var "^ S.toString s
+	  | ppty (VarTy (s,_)) = S.toString s
 	  | ppty (RecordTy l) = 
 	  	"{" ^ (String.concatWith ", " 
 			(map (fn (x,y) => ppexp x ^ " : " ^ ppty y) l)) ^ "}"
@@ -107,10 +107,10 @@ struct
 		)
 	and pppat (AsPat (p1,p2)) = pppat p1 ^ " as " ^ pppat p2
 	  | pppat (ConstraintPat (p,t)) = pppat p ^ " : " ^ ppty t
-	  | pppat (AppPat []) = ""
-	  | pppat (AppPat [h]) = pppat h
+	  | pppat (AppPat []) = "AppPat "
+	  | pppat (AppPat [h]) = "AppPat " ^ pppat h
 	  | pppat (AppPat (h::t)) = pppat h ^ " (" ^ pppat (AppPat t) ^ ")"
-	  | pppat (VarPat {name,...}) = S.toString name
+	  | pppat (VarPat {name,...}) = "var " ^ S.toString name
 	  | pppat (OpPat {symbol,...}) = "op " ^ S.toString symbol
 	  | pppat (ConstPat e) = ppexp e
 	  | pppat (WildPat) = "_"
