@@ -3,7 +3,7 @@ struct
  fun initialise () =
   	let
 		val _ = Optimiser.addPass ("nullOpt", fn x => x)
-	(*	val _ = Optimiser.addPass ("constFold", ConstFold.optConstFold) *)
+		val _ = Optimiser.addPass ("constFold", ConstFold.optConstFold) 
 	in
 		()
 	end
@@ -24,8 +24,11 @@ struct
 		val _ = print "AST DUMP:\n"
 		val _ = print (PrettyPrint.prettyPrint ast)
 		val _ = print "\n"
-		val ast2 = Optimiser.runAllPasses ast
-		val l = Intermediate.translate ast
+		val ast' = Optimiser.runAllPasses ast
+		val _ = print "AST DUMP:\n"
+		val _ = print (PrettyPrint.prettyPrint ast')
+		val _ = print "\n"
+		val l = Intermediate.translate ast'
 		val _ = print "CODE DUMP:\n"
 		val _ = print (Intermediate.emit l [] [])
 	in
