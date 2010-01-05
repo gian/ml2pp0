@@ -72,7 +72,7 @@ struct
 			" = " ^ ppexp body
 	and ppty (TupleTy t) = String.concatWith " * " (map ppty t)
 	  | ppty (ArrowTy (t,t')) = ppty t ^ " -> " ^ ppty t'
-	  | ppty (VarTy s) = S.toString s
+	  | ppty (VarTy (s,_)) = S.toString s
 	  | ppty (RecordTy l) = 
 	  	"{" ^ (String.concatWith ", " 
 			(map (fn (x,y) => ppexp x ^ " : " ^ ppty y) l)) ^ "}"

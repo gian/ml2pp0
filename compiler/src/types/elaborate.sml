@@ -24,10 +24,11 @@ struct
 	
 	fun get_tconstr l = 
 		List.find (fn (p,q) => constr_eq l p) (!tenv)
-	
+
+	(* FIXME should use the local enclosing scope, not top_level *)
 	fun fresh_ty () = VarTy (Symbol.fromString 
 								("?X." ^ Int.toString (
-									tv := !tv + 1; !tv)))
+									tv := !tv + 1; !tv)),Symbol.top_level)
 
 	fun print_constr [] = ()
 	  | print_constr ((l,r)::t) = 
@@ -40,7 +41,7 @@ struct
 			print_constr t
 		end
 
-	fun constr_e (Var {attr,name}) =
+	fun constr_e (Var {attr,name,symtab}) =
 		let
 			val rt = (case get_vconstr (Symbol name) of
 				NONE => fresh_ty ()
@@ -65,7 +66,7 @@ struct
 					r2
 				end) init exps'
 		end
-	  | constr_e (Fn {attr,match}) =
+	  | constr_e (Fn {attr,match,symtab}) =
 	  	let
 			val (p,e) = hd match
 			val r1 = constr_p p

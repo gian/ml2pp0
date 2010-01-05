@@ -21,14 +21,15 @@ struct
 	fun lml (smlfile) = 
     let 
 	    val ast = (Syntax.unflatten_ops (Parse.parse' smlfile))
+		val ast' = Syntax.symtab_popl Symbol.top_level ast
 		val _ = print "AST DUMP:\n"
-		val _ = print (PrettyPrint.prettyPrint ast)
+		val _ = print (PrettyPrint.prettyPrint ast')
 		val _ = print "\nElaborate:\n"
-		val _ = Elaborate.constr ast
+		val _ = Elaborate.constr ast'
 		val _ = Elaborate.print_constr (!Elaborate.venv) 
 		val _ = print "\n"
 		(* val ast2 = Optimiser.runAllPasses ast *)
-		val l = Intermediate.translate ast
+		val l = Intermediate.translate ast'
 		val _ = print "CODE DUMP:\n"
 		val _ = print (Intermediate.emit l [] [])
 	in

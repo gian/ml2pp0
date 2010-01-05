@@ -19,10 +19,11 @@ struct
 	and ast_map_dec (f:ast_map_funs) (e as ExpDec {attr,exp}) = 
 	  	(#decfun f) (ExpDec {attr=attr,exp=ast_map_exp f exp})
 	  | ast_map_dec f (e as NullDec) = (#decfun f) NullDec
-	  | ast_map_dec f (LocalDec {attr,dec1,dec2}) =
+	  | ast_map_dec f (LocalDec {attr,dec1,dec2,symtab}) =
 	  	(#decfun f) (LocalDec {attr=attr,
 							   dec1=ast_map_decs f dec1,
-							   dec2=ast_map_decs f dec2})
+							   dec2=ast_map_decs f dec2,
+							   symtab=symtab})
 	  | ast_map_dec f (ValDec {attr,tyvars,valBind,recBind}) =
 	    (#decfun f) (ValDec {attr=attr,
 							 tyvars=tyvars,
@@ -34,7 +35,7 @@ struct
 							 clauses=map (ast_map_clauses f) clauses})
 	  | ast_map_dec f (TypeDec {attr,tyBind}) =
 	  	(#decfun f) (TypeDec {attr=attr,tyBind=ast_map_binds f tyBind})
-	  | ast_map_dec f (fd as FixDec {attr,fixity,ops}) =
+	  | ast_map_dec f (fd as FixDec {attr,fixity,ops,symtab}) =
 	  	(#decfun f) fd
 	  | ast_map_dec f x = (#decfun f) x
 	and ast_map_exp f (Handle {attr,exp,match}) = 
@@ -48,20 +49,22 @@ struct
 							rhs=ast_map_exp f rhs})
 	  | ast_map_exp f (Constraint {attr,exp,ty}) =
 	    (#expfun f) (Constraint {attr=attr,exp=ast_map_exp f exp,ty=ty})
-	  | ast_map_exp f (Fn {attr=attr,match=match}) =
+	  | ast_map_exp f (Fn {attr=attr,match=match,symtab}) =
 	    (#expfun f) (Fn {attr=attr,
 						 match=map (fn (x,y) =>
 						 	(ast_map_pat f x,
-							 ast_map_exp f y)) match})
+							 ast_map_exp f y)) match,
+							 symtab=symtab})
 	  | ast_map_exp f (If {attr,cond,tbr,fbr}) =
 	  	(#expfun f) (If {attr=attr,
 						 cond=ast_map_exp f cond,
 						 tbr=ast_map_exp f tbr,
 						 fbr=ast_map_exp f fbr})
-	  | ast_map_exp f (Let {attr,decs,exp}) =
+	  | ast_map_exp f (Let {attr,decs,exp,symtab}) =
 	  	(#expfun f) (Let {attr=attr,
 						  decs=ast_map_decs f decs,
-						  exp=ast_map_exp f exp})
+						  exp=ast_map_exp f exp,
+						  symtab=symtab})
 	  | ast_map_exp f x = (#expfun f) x
 	and ast_map_binds f x = map (ast_map_bind f) x
 	and ast_map_bind f (ValBind (p,e)) = (#bindfun f) 
@@ -114,7 +117,8 @@ struct
 					ty= #ty r}
 	  | set_e_attr a (Fn r) =
 	  	Fn {attr=a :: (#attr r),
-			match= #match r}
+			match= #match r,
+			symtab= #symtab r}
 	  | set_e_attr a (Case r) = Case r 
 	  | set_e_attr a (While r) = While r
 	  | set_e_attr a (If r) = If
@@ -126,7 +130,8 @@ struct
 	  | set_e_attr a (Op r) = Op r
 	  | set_e_attr a (Var r) = 
 	  	Var {attr=a :: (#attr r),
-		     name= #name r}
+		     name= #name r,
+			 symtab = #symtab r}
 	  | set_e_attr a (Selector r) = Selector r
 	  | set_e_attr a (Record r) = Record r
 	  | set_e_attr a (Seq r) = Seq r
