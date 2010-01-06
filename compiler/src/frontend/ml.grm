@@ -8,6 +8,7 @@
 
 structure A = Ast
 structure S = Symbol
+structure T = Symtab
 
 type clause = A.clause
 
@@ -277,7 +278,7 @@ dec : decnode (decnode)
 decnode : decnolocal              (decnolocal) 
         | LOCAL decs IN decs END  (A.LocalDec 
 									{attr=[],dec1=decs1,dec2=decs,
-										symtab=ref (S.symtab())})
+										symtab=ref (T.symtab())})
 
 decnolocal
         : VAL valbindTop          (A.ValDec {attr=[],
@@ -303,7 +304,7 @@ decnolocal
         | EXCEPTION ebs
           (A.ExceptionDec {attr=[]})
         | fixity vids           (A.FixDec {attr=[],fixity = fixity,
-                                          ops = vids, symtab = S.top_level})
+                                          ops = vids, symtab = T.top_level})
 
 valbindTop : valbind (valbind)
 
@@ -475,7 +476,7 @@ expnode : exp HANDLE match      (A.Handle {attr=[],exp=exp, match=match})
         | exp COLON ty          (A.Constraint {attr=[],exp=exp,ty=ty})
         | app_exp               (A.App {attr=[],exps=app_exp})
         | FN match              (A.Fn {attr=[],match=match,
-									symtab=ref (S.symtab())})
+									symtab=ref (T.symtab())})
         | CASE exp OF match     (A.Case {attr=[],exp=exp,match=match})
         | WHILE exp DO exp      (A.While {attr=[],test=exp1,exp = exp2})
         | IF exp THEN exp ELSE exp 
@@ -484,13 +485,13 @@ expnode : exp HANDLE match      (A.Handle {attr=[],exp=exp, match=match})
 
 app_exp : aexp app_exp1     (aexp :: app_exp1)
         | longvid app_exp1  ((A.Var {attr=[],name = longvid,
-									symtab=S.top_level}) :: app_exp1)
+									symtab=T.top_level}) :: app_exp1)
 
 app_exp1 :         ([])
          | app_exp (app_exp)
 
 aexp    : OP longvid            (A.Op {attr=[],symbol = longvid, 
-										symtab = S.top_level})
+										symtab = T.top_level})
         | const                 (const)
         | HASH field            (A.Selector {attr=[],exp=field})
         | LBRACE elabels RBRACE (A.Record {attr=[],fields=elabels})
@@ -502,10 +503,10 @@ aexp    : OP longvid            (A.Op {attr=[],symbol = longvid,
         | LBRACKET exp_list RBRACKET  (A.List {attr=[],exps=exp_list})
         | LBRACKET RBRACKET           (A.List {attr=[],exps=[]})
         | LET decs IN exp END   (A.Let {attr=[],decs=decs,exp=exp,
-										symtab=ref (S.symtab ())})
+										symtab=ref (T.symtab ())})
         | LET decs IN exp_ps END
             (A.Let {attr=[],decs=decs,exp=(A.Seq {attr=[], exps=exp_ps}),
-					 symtab=ref (S.symtab())})
+					 symtab=ref (T.symtab())})
 
 exp_2c  : exp COMMA exp_2c      (exp :: exp_2c)
         | exp COMMA exp         ([exp1, exp2])
@@ -529,9 +530,9 @@ apats   : apat                  ([apat])
 apat : apatnode (apatnode)
 
 apatnode : longvidNoEqual        (A.VarPat {attr=[],name=longvidNoEqual,
-											symtab=S.top_level})
+											symtab=T.top_level})
         | OP longvid             (A.OpPat {attr=[],symbol= longvid,
-											symtab=S.top_level})
+											symtab=T.top_level})
         | const
           (case const of
            A.Real _ => 
@@ -565,7 +566,7 @@ patitem
    : field EQUALOP pat (A.FieldPat (field, pat))
    | vidNoEqual constraint opaspat
      (let
-		val p = A.VarPat {attr=[],name=vidNoEqual,symtab=S.top_level}
+		val p = A.VarPat {attr=[],name=vidNoEqual,symtab=T.top_level}
 		val p' = (case constraint of
 					NONE => p
 				  | SOME x => A.ConstraintPat (p,x))
@@ -653,17 +654,17 @@ vid : idEqual                  (idEqual)
 vidNoEqual : id                (id)
 vids : vid                     ([vid])
      | vid vids                (vid::vids)
-con : id                       (A.Var {attr=[],name=id,symtab=S.top_level})
-tycon : idNoAsterisk           (A.VarTy (idNoAsterisk,S.top_level))
-tyvar : TYVAR                  (A.VarTy (S.fromString TYVAR,S.top_level))
-field : id                     (A.Var {attr=[],name=id,symtab=S.top_level})
+con : id                       (A.Var {attr=[],name=id,symtab=T.top_level})
+tycon : idNoAsterisk           (A.VarTy (idNoAsterisk,T.top_level))
+tyvar : TYVAR                  (A.VarTy (S.fromString TYVAR,T.top_level))
+field : id                     (A.Var {attr=[],name=id,symtab=T.top_level})
       | int                    (A.Int
                                  (if int <= 0
                                    then raise Fail "nonpositive field"
                                     else
                                        int - 1))
 
-longtycon : longidNoAsterisk 	(A.VarTy (longidNoAsterisk,S.top_level)) 
+longtycon : longidNoAsterisk 	(A.VarTy (longidNoAsterisk,T.top_level)) 
 longvid : longidEqual      		(longidEqual) 
 longvidNoEqual : longid    		(longid) 
 longcon : longid           		(longid) 

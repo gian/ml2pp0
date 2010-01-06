@@ -3,8 +3,6 @@ struct
 	type symbol = Symbol.symbol
 	type 'a table = 'a Symbol.table
 
-	type symtab = {venv : symbol table ref, tenv : symbol table ref}
-
 	datatype fixity = 
 			Infix of int option
 		  | Infixr of int option
@@ -13,7 +11,7 @@ struct
 	datatype dec = 
 			ExpDec of {attr : attr list, exp : exp}
 		  | NullDec
-		  | LocalDec of {attr: attr list,dec1: dec list,dec2 :dec list, symtab : symtab ref}
+		  | LocalDec of {attr: attr list,dec1: dec list,dec2 :dec list, symtab : (ty option * exp option) symtab ref}
 		  | ValDec of 
 		  	{attr:attr list,
 			 tyvars: ty list,
@@ -35,27 +33,27 @@ struct
 			 body : dec list}
 	      | ExceptionDec of {attr : attr list}
 		  | OpenDec of {attr : attr list} 
-		  | FixDec of {attr : attr list, fixity: fixity,ops:symbol list, symtab : symtab ref}
+		  | FixDec of {attr : attr list, fixity: fixity,ops:symbol list, symtab : (ty option * exp option) symtab ref}
 	     and exp =
 			Handle of 
 				{attr : attr list, exp : exp, match : (pat * exp) list}
 		  | App of {attr : attr list, exps : exp list}
 		  | BinOp of {attr : attr list, opr : opr, lhs: exp, rhs: exp}
 		  | Constraint of {attr : attr list, exp : exp, ty : ty}
-		  | Fn of {attr : attr list, match : (pat * exp) list, symtab : symtab ref}
+		  | Fn of {attr : attr list, match : (pat * exp) list, symtab : (ty option * exp option) symtab ref}
 		  | Case of {attr: attr list, exp: exp, match: (pat * exp) list}
 		  | While of {attr: attr list, test : exp, exp : exp}
 		  | If of {attr:attr list, cond: exp, tbr: exp, fbr: exp}
 		  | Raise of {attr:attr list, exp : exp}
-		  | Op of {attr: attr list, symbol : symbol, symtab : symtab ref}
-		  | Var of {attr: attr list, name : symbol, symtab : symtab ref}
+		  | Op of {attr: attr list, symbol : symbol, symtab : (ty option * exp option) symtab ref}
+		  | Var of {attr: attr list, name : symbol, symtab : (ty option * exp option) symtab ref}
 		  | Selector of {attr: attr list, exp : exp}
 		  | Record of {attr: attr list, fields : (exp * exp) list}
 		  | Unit
 		  | Seq of {attr: attr list, exps : exp list}
 		  | Tuple of {attr: attr list, exps : exp list}
 		  | List of {attr: attr list, exps : exp list}
-		  | Let of {attr: attr list, decs : dec list, exp : exp, symtab : symtab ref}
+		  | Let of {attr: attr list, decs : dec list, exp : exp, symtab : (ty option * exp option) symtab ref}
 		  | Int of int
 		  | Word of word
 		  | Real of real
@@ -66,8 +64,8 @@ struct
 			AsPat of pat * pat
 		  | ConstraintPat of pat * ty
 		  | AppPat of pat list
-		  | VarPat of {attr: attr list, name : symbol, symtab : symtab ref}
-		  | OpPat of {attr: attr list, symbol : symbol, symtab : symtab ref}
+		  | VarPat of {attr: attr list, name : symbol, symtab : (ty option * exp option) symtab ref}
+		  | OpPat of {attr: attr list, symbol : symbol, symtab : (ty option * exp option) symtab ref}
 		  | ConstPat of exp
 		  | WildPat
 		  | TuplePat of pat list
@@ -85,7 +83,7 @@ struct
 		 and ty =
 			TupleTy of ty list
 		  | ArrowTy of ty * ty
-		  | VarTy of symbol * symtab ref
+		  | VarTy of symbol * ((ty option * exp option) symtab ref)
 		  | RecordTy of (exp * ty) list
 		  | UnitTy
 		  | TyConTy of ty * ty list
@@ -123,9 +121,13 @@ struct
 		 withtype clause = {pats : pat list,
     	           resultType : ty option,
         	       body : exp}
-	
+			  and 'a symtab = {venv : 'a Symbol.table ref,
+				            tenv : 'a Symbol.table ref}
+
+
+	type symbol_data = ty option * exp option
+
 	type match = (pat * exp) list
 
 	type program = dec list
-
 end

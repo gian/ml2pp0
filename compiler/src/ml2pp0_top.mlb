@@ -1,0 +1,3 @@
+$(SML_LIB)/basis/basis.mlb
+$(MLTON_ROOT)/mlyacc-lib/mlyacc-lib.mlb
+$(SML_LIB)/smlnj-lib/Util/smlnj-lib.mlb

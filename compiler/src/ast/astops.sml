@@ -74,7 +74,17 @@ struct
 												  ast_map_exp f e))
 	  | ast_map_bind f x = (#bindfun f) x
 	and ast_map_match f x = x
-	and ast_map_pat f x = (#patfun f) x
+	and ast_map_pat f (AsPat (l,r)) = 
+		(#patfun f) (AsPat (ast_map_pat f l, ast_map_pat f r))
+	  | ast_map_pat f (ConstraintPat (p,t)) =
+	  	(#patfun f) (ConstraintPat (ast_map_pat f p, t))
+	  | ast_map_pat f (AppPat l) =
+	  	(#patfun f) (AppPat (map (ast_map_pat f) l))
+	  | ast_map_pat f (TuplePat l) =
+	  	(#patfun f) (TuplePat (map (ast_map_pat f) l))
+	  | ast_map_pat f (ListPat l) =
+	  	(#patfun f) (ListPat (map (ast_map_pat f) l))
+	  | ast_map_pat f k = (#patfun f) k
 	and ast_map_clauses f c = (#clausesfun f) (map (ast_map_clause f) c)
 	and ast_map_clause f {pats,resultType,body} =
 		(#clausefun f) {pats=map (ast_map_pat f) pats,

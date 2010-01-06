@@ -20,8 +20,9 @@ struct
 
 	fun lml (smlfile) = 
     let 
-	    val ast = (Syntax.unflatten_ops (Parse.parse' smlfile))
-		val ast' = Syntax.symtab_popl Symbol.top_level ast
+	    val ast = Parse.parse' smlfile
+		val ast' = Syntax.runAllPasses ast
+		val _ = Symtab.print_scope (Symtab.top_level)
 		val _ = print "AST DUMP:\n"
 		val _ = print (PrettyPrint.prettyPrint ast')
 		val _ = print "\nElaborate:\n"
