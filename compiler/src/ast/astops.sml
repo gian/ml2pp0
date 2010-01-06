@@ -70,6 +70,11 @@ struct
 	and ast_map_bind f (ValBind (p,e)) = (#bindfun f) 
 									     (ValBind (ast_map_pat f p,
 												  ast_map_exp f e))
+	  | ast_map_bind f (ValRecBind (p,m)) = 
+	  	(#bindfun f) (ValRecBind (ast_map_pat f p,
+								  map (fn (p',e') => 
+								  	(ast_map_pat f p',
+								     ast_map_exp f e')) m))
 	  | ast_map_bind f x = (#bindfun f) x
 	and ast_map_match f x = x
 	and ast_map_pat f (AsPat (l,r)) = 
