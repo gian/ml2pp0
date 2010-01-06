@@ -13,7 +13,7 @@ struct
 	  | symtab_popl_dec scope (LocalDec {attr,dec1,dec2,symtab}) =
 	  	 (LocalDec {attr=attr,
 							   dec1=symtab_popl_decs symtab dec1,
-							   dec2=symtab_popl_decs symtab dec2,
+							   dec2=symtab_popl_decs scope dec2,
 							   symtab=symtab})
 	  | symtab_popl_dec scope (ValDec {attr,tyvars,valBind,recBind}) =
 	     (ValDec {attr=attr,

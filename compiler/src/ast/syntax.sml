@@ -10,7 +10,9 @@ struct
 		("SyntaxPopulateSymtabs",
 			SyntaxPopulateSymtabs.translate ()),
 		("SyntaxFundecAnon",
-			SyntaxFundecAnon.translate ())
+			SyntaxFundecAnon.translate ()),
+		("SyntaxCollapseDecs",
+			SyntaxCollapseDecs.translate ())
 	]
 
 	fun runAllPasses prog =

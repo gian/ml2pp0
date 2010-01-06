@@ -12,11 +12,3 @@ val e = let
 			y
 		end
 
-type a = int
-
-type b = a
-
-type c = 'a list
-
-type f = int list * int list
-
