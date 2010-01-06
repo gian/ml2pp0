@@ -23,6 +23,8 @@ frontend/ml.grm.sig
 frontend/ml.grm.sml
 frontend/ml.lex.sml
 frontend/parse.sml
+optimiser/optimiser.sml
+optimiser/constfold.sml
 tests/test.sml
 codegen/intermediate.sml
 codegen/codegen.sml
