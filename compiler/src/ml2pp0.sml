@@ -31,9 +31,13 @@ struct
 		val _ = Symtab.print_scope (Symtab.top_level)
 
 		val _ = print "\nElaborate:\n"
-		val _ = Elaborate.constr ast'
+		val _ = Elaborate.constr (Symtab.top_level)
 		val _ = Elaborate.print_constr (!Elaborate.venv) 
 		val _ = print "\n"
+
+		val _ = print "SCOPE DUMP CONSTRAINED:\n"
+		val _ = Symtab.print_scope (Symtab.top_level)
+
 		val _ = Optimiser.runAllPasses Symtab.top_level
 		val _ = print "SCOPE DUMP (post-Optimiser):\n"
 		val _ = Symtab.print_scope (Symtab.top_level)

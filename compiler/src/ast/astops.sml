@@ -189,7 +189,7 @@ struct
 	  | e_attr_ty x = 
 	  		(fn (SOME (Type t)) => SOME t 
 			  | _ => NONE)
-			(List.find (fn (Type x) => true) (e_attr x))
+			(List.find (fn (Type x) => true | _ => false) (e_attr x))
 
 	fun opr_to_symbol x = Symbol.fromString (PrettyPrint.ppopr x)
 
@@ -201,6 +201,7 @@ struct
 	  | ty_eq (RecordTy x) (RecordTy y) = false 
 	  | ty_eq UnitTy UnitTy = false
 	  | ty_eq (TyConTy (ty,l)) (TyConTy (ty',l')) = (ty_eq ty ty')
+	  | ty_eq (UVar i) (UVar j) = i = j
 	  | ty_eq _ _ = false
 
 end

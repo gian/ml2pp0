@@ -85,6 +85,7 @@ struct
 	  | ppty (TyConTy (t,[])) = ppty t
 	  | ppty (TyConTy (t,t')) = 
 	  	"(" ^ (String.concatWith "," (map ppty t')) ^ ") " ^ ppty t
+	  | ppty (UVar i) = "?X" ^ Int.toString i
 	  | ppty _ = "<unpretty-printed ty>"
 	and ppopr BOr = "orelse"
 	  | ppopr BAnd = "andalso"
@@ -95,6 +96,7 @@ struct
 	  | ppopr RDiv = "/"
 	  | ppopr StrConcat = "^"
 	  | ppopr Cons = "::"
+	  | ppopr Concat = "@"
 	  | ppopr Mod = "mod"
 	  | ppopr Equal = "="
 	  | ppopr NEqual = "<>"
@@ -127,6 +129,7 @@ struct
 	  | pppat (RecordPat {flexible=true, pats}) =
 	  	"{" ^ (String.concatWith ", " (map pppat pats)) ^ ", ...}"
 	  | pppat (FieldPat (e,p)) = ppexp e ^ "=" ^ pppat p
+	  | pppat _ = "<unpretty-printed pattern>"
 	and ppfixity (Infix (SOME x)) = "infix " ^ Int.toString x ^ " "
 	  | ppfixity (Infix NONE) = "infix "
 	  | ppfixity (Infixr (SOME x)) = "infixr " ^ Int.toString x ^ " "
