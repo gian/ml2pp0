@@ -34,6 +34,7 @@ struct
 		val _ = Elaborate.constr (Symtab.top_level)
 		val _ = Elaborate.print_constr (!Elaborate.venv) 
 		val _ = print "\n"
+		val _ = Elaborate.unify_constraints ()
 
 		val _ = print "SCOPE DUMP CONSTRAINED:\n"
 		val _ = Symtab.print_scope (Symtab.top_level)
