@@ -14,7 +14,7 @@ struct
 	  	 (LocalDec {attr=attr,
 							   dec1=symtab_popl_decs symtab dec1,
 							   dec2=symtab_popl_decs scope dec2,
-							   symtab=symtab})
+							   symtab=Symtab.set_parent scope symtab})
 	  | symtab_popl_dec scope (ValDec {attr,tyvars,valBind,recBind}) =
 	     (ValDec {attr=attr,
 							 tyvars=tyvars,
@@ -45,7 +45,7 @@ struct
 						 match=map (fn (x,y) =>
 						 	(symtab_popl_pat symtab x,
 							 symtab_popl_exp symtab y)) match,
-							 symtab=symtab})
+							 symtab=Symtab.set_parent scope symtab})
 	  | symtab_popl_exp scope (If {attr,cond,tbr,fbr}) =
 	  	 (If {attr=attr,
 						 cond=symtab_popl_exp scope cond,

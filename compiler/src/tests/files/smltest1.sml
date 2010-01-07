@@ -8,7 +8,7 @@ infix 4 = <> > >= < <=
 infix 3 := o
 infix 0 before
 
-val a : int = 123 + 345
+val a = 123 + 345
 
 fun f 0 = 11
   | f x = x * x + 10

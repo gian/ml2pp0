@@ -58,7 +58,7 @@ struct
 			List.app (
 				fn term => 
 				let
-					val st = ref (Symtab.symtab ())
+					val st = ref (Symtab.symtab symtab)
 				in
 					Symtab.insert_v symtab term
 					(NONE,SOME (App {attr=[],
@@ -79,7 +79,18 @@ struct
 				) terms
 		end
 
-
+	fun patToSt scope p e' =
+		(case p of 
+				VarPat {attr,name,symtab} =>
+					Symtab.insert_v symtab name (NONE,SOME e')
+			  | OpPat {attr,symbol,symtab} =>
+			  		Symtab.insert_v symtab symbol (NONE,SOME e')
+			  | TuplePat l => tup_ins scope p e'
+			  | ListPat l => tup_ins scope p e'
+			  | AppPat l => raise Fail "Not implemented AppDec" 
+			  | AsPat (l,r) => raise Fail "Not implemented AsPat"
+			  | ConstraintPat (p,t) => raise Fail "Not implemented Constr"
+			)
 
 
 	(* Remove all declarations by substituting them into the
@@ -143,21 +154,20 @@ struct
 	and collapse_bind scope (ValBind (p,e)) =  
 		let
 			val e' = collapse_exp scope e
-			val p' = (case p of 
-				VarPat {attr,name,symtab} =>
-					Symtab.insert_v symtab name (NONE,SOME e')
-			  | OpPat {attr,symbol,symtab} =>
-			  		Symtab.insert_v symtab symbol (NONE,SOME e')
-			  | TuplePat l => tup_ins scope p e'
-			  | ListPat l => tup_ins scope p e'
-			  | AppPat l => raise Fail "Not implemented" 
-			  | AsPat (l,r) => raise Fail "Not implemented"
-			  | ConstraintPat (p,t) => raise Fail "Not implemented"
-			)
-		
+			val _ = patToSt scope p e'	
 		in
 			()
 		end
+	  | collapse_bind scope (ValRecBind (p,m)) = 
+	  	let
+			val sc = ref (Symtab.symtab scope)
+			val m' = map (fn (pat,exp) => (pat,collapse_exp sc exp)) m
+			val e' = Fn {attr=[],match=m',symtab=sc}
+			val _ = patToSt scope p e'
+		in
+			()
+		end
+	  | collapse_bind scope (TypeBind _) = () (* already bound *)
 	  | collapse_bind scope x = raise Fail "Unimplemented non-ValBind"
 
 	fun translate _ prog = collapse_decs Symtab.top_level prog

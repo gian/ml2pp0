@@ -224,7 +224,7 @@ fun assoc_reorder_tree (node as (A.BinOp {attr, opr=opra, lhs, rhs=(A.BinOp {att
 fun opt_associativity (node as (A.BinOp {attr, opr=opra, lhs, rhs=(A.BinOp {attr=rattr, opr=oprb, lhs=rlhs, rhs=rrhs})}))
 	= if opra = oprb andalso is_associative opra then
 		A.App {attr=[], exps=[
-			A.Var {attr=[], name=(Symbol.fromString "foldany"), symtab=ref (Symtab.symtab ())},
+			A.Var {attr=[], name=(Symbol.fromString "foldany"), symtab=ref (Symtab.symtab Symtab.top_level)},
 			A.Op {symbol=AstOps.opr_to_symbol opra,symtab=Symtab.top_level,attr=[]},
 			A.List {attr=[], exps=[lhs,rlhs,rrhs]}]}
 	else
@@ -232,7 +232,7 @@ fun opt_associativity (node as (A.BinOp {attr, opr=opra, lhs, rhs=(A.BinOp {attr
   | opt_associativity (node as (A.BinOp {attr, opr=opra, lhs=(A.BinOp {attr=lattr, opr=oprb, lhs=llhs, rhs=lrhs}), rhs}))
 	= if opra = oprb andalso is_associative opra then
 		A.App {attr=[], exps=[
-			A.Var {attr=[], name=(Symbol.fromString "foldany"), symtab=ref (Symtab.symtab ())},
+			A.Var {attr=[], name=(Symbol.fromString "foldany"), symtab=ref (Symtab.symtab Symtab.top_level)},
 			A.Op {symbol=AstOps.opr_to_symbol opra,symtab=Symtab.top_level,attr=[]},
 			A.List {attr=[], exps=[llhs,llhs,rhs]}]}
 	else

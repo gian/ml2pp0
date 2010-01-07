@@ -278,7 +278,7 @@ dec : decnode (decnode)
 decnode : decnolocal              (decnolocal) 
         | LOCAL decs IN decs END  (A.LocalDec 
 									{attr=[],dec1=decs1,dec2=decs,
-										symtab=ref (T.symtab())})
+									symtab=ref (T.empty ())})
 
 decnolocal
         : VAL valbindTop          (A.ValDec {attr=[],
@@ -476,7 +476,7 @@ expnode : exp HANDLE match      (A.Handle {attr=[],exp=exp, match=match})
         | exp COLON ty          (A.Constraint {attr=[],exp=exp,ty=ty})
         | app_exp               (A.App {attr=[],exps=app_exp})
         | FN match              (A.Fn {attr=[],match=match,
-									symtab=ref (T.symtab())})
+							  	 symtab=ref (T.empty ())})
         | CASE exp OF match     (A.Case {attr=[],exp=exp,match=match})
         | WHILE exp DO exp      (A.While {attr=[],test=exp1,exp = exp2})
         | IF exp THEN exp ELSE exp 
@@ -503,10 +503,10 @@ aexp    : OP longvid            (A.Op {attr=[],symbol = longvid,
         | LBRACKET exp_list RBRACKET  (A.List {attr=[],exps=exp_list})
         | LBRACKET RBRACKET           (A.List {attr=[],exps=[]})
         | LET decs IN exp END   (A.Let {attr=[],decs=decs,exp=exp,
-										symtab=ref (T.symtab ())})
+										symtab=ref (T.empty ())})
         | LET decs IN exp_ps END
-            (A.Let {attr=[],decs=decs,exp=(A.Seq {attr=[], exps=exp_ps}),
-					 symtab=ref (T.symtab())})
+            (A.Let {attr=[],decs=decs,exp=(A.Seq {attr=[],exps=exp_ps}),
+					 symtab=ref (T.empty ())})
 
 exp_2c  : exp COMMA exp_2c      (exp :: exp_2c)
         | exp COMMA exp         ([exp1, exp2])
