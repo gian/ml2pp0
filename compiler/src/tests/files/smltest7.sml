@@ -12,3 +12,6 @@ val e = let
 			y
 		end
 
+val (x,y) = (d 10, d 11)
+
+

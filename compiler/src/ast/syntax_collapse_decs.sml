@@ -27,11 +27,33 @@ struct
 		place the binding.
 	   *)
 
-	fun collect_terms t = []
+	fun collect_terms (AsPat (p1,p2)) = 
+			collect_terms p1 @ collect_terms p2
+	  | collect_terms (ConstraintPat (p,t)) = 
+	  		collect_terms p
+	  | collect_terms (AppPat []) = []
+	  | collect_terms (AppPat (h::t)) = 
+	  		collect_terms h @ collect_terms (AppPat t)
+	  | collect_terms (VarPat {attr,name,symtab}) = [name]
+	  | collect_terms (TuplePat []) = []
+	  | collect_terms (TuplePat (h::t)) =
+	  		collect_terms h @ collect_terms (TuplePat t)
+	  | collect_terms (ListPat []) = []
+	  | collect_terms (ListPat (h::t)) =
+			collect_terms h @ collect_terms (ListPat t)
+	  | collect_terms _ = []
+
+	val pm_rhs = ref 0
 
 	fun tup_ins symtab t e =
 		let
 			val terms = collect_terms t
+
+			val es = Symbol.fromString 
+				("_pm_rhs_" ^ Int.toString (!pm_rhs))
+			val _ = pm_rhs := !pm_rhs + 1
+			val _ = Symtab.insert_v symtab es (NONE,SOME e)
+			val e' = Var {attr=[],name=es,symtab=symtab}
 		in
 			List.app (
 				fn term => 
@@ -48,7 +70,8 @@ struct
 											 symtab=st
 										})],
 									symtab=st
-									}
+									},
+								e'
 						  	]
 						  }
 					))

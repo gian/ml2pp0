@@ -25,7 +25,7 @@ struct
 	  		ppopr opr ^ " (" ^ ppexp lhs ^ ", " ^ ppexp rhs ^ ")"
 	  | ppexp (Constraint {exp=exp,ty=ty,...}) =
 			ppexp exp ^ " : " ^ ppty ty
-	  | ppexp (Fn {match,...}) = "fn " ^ ppmatch match
+	  | ppexp (Fn {match,...}) = "(fn " ^ ppmatch match ^ ")"
 	  | ppexp (Case x) = "<case>"
 	  | ppexp (While x) = "<while>"
 	  | ppexp (If {cond,tbr,fbr,...}) = 
@@ -44,6 +44,10 @@ struct
 	  | ppexp (Bool b) = if b then "true" else "false"
 	  | ppexp (Let {decs,exp,...}) = 
 	  	"\nlet\n" ^ ppdecs decs ^ "in\n   " ^ ppexp exp ^ "\nend"
+	  | ppexp (Tuple {attr,exps}) = 
+	  	"(" ^ String.concatWith ", " (map ppexp exps) ^ ")"
+	  | ppexp (List {attr,exps}) =
+	  	"[" ^ String.concatWith ", " (map ppexp exps) ^ "]"
 	  | ppexp _ = "<unpretty-printed exp>"
 	and ppbinds [] = ""
 	  | ppbinds [h] = ppbind h

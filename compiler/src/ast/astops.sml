@@ -54,7 +54,7 @@ struct
 						 match=map (fn (x,y) =>
 						 	(ast_map_pat f x,
 							 ast_map_exp f y)) match,
-							 symtab=symtab})
+							 symtab=ast_map_symtab f symtab})
 	  | ast_map_exp f (If {attr,cond,tbr,fbr}) =
 	  	(#expfun f) (If {attr=attr,
 						 cond=ast_map_exp f cond,
@@ -64,7 +64,7 @@ struct
 	  	(#expfun f) (Let {attr=attr,
 						  decs=ast_map_decs f decs,
 						  exp=ast_map_exp f exp,
-						  symtab=symtab})
+						  symtab=ast_map_symtab f symtab})
 	  | ast_map_exp f x = (#expfun f) x
 	and ast_map_binds f x = map (ast_map_bind f) x
 	and ast_map_bind f (ValBind (p,e)) = (#bindfun f) 
@@ -93,7 +93,30 @@ struct
 		(#clausefun f) {pats=map (ast_map_pat f) pats,
 						resultType=resultType,
 						body=ast_map_exp f body}
+	and ast_map_symtab f st =
+		let
+			val {venv,tenv} = !st
+
+			fun maybeUpdT x = x
+
+			fun upd env NONE _ = 
+				raise Fail "[BUG] ast_map_symtab updates unknown symbol"
+			  | upd env (SOME s) (t,SOME e) = 
+			  		Symtab.insert_v st s (t, SOME ((#expfun f) e))
+			  | upd env _ _ = ()
+
+			val vkeys = Symbol.keys (!venv)
+			val tkeys = Symbol.keys (!tenv)
+		in
+			(List.app (fn (s,(t,e)) => 
+				upd venv (Symbol.unhash s) (t,e)) vkeys;
+			List.app (fn (s,(t,e)) => 
+				upd tenv (Symbol.unhash s) (t,e)) tkeys;
+			st)
+		end
 	val ast_map = ast_map_decs
+
+	val ast_map_top_level f = ast_map_symtab f Symtab.top_level
 
 	fun e_attr (Handle {attr,...}) = attr
 	  | e_attr (App {attr,...}) = attr

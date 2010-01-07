@@ -29,7 +29,7 @@ struct
 		val _ = Elaborate.constr ast'
 		val _ = Elaborate.print_constr (!Elaborate.venv) 
 		val _ = print "\n"
-		(* val ast2 = Optimiser.runAllPasses ast *)
+		val ast2 = Optimiser.runAllPasses ast 
 		val l = Intermediate.translate ast'
 		val _ = print "CODE DUMP:\n"
 		val _ = print (Intermediate.emit l [] [])
