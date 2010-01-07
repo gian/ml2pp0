@@ -30,7 +30,7 @@ $(BIN):
 clean:
 	../../bin/clean
 
-frontend/ml.grm.sig frontend/ml.grm.sml frontend/ml.lex.sml: frontend/ml.grm frontend/ml.lex
+frontend/ml.grm.sml frontend/ml.lex.sml: frontend/ml.lex frontend/ml.grm
 	mllex frontend/ml.lex
 	mlyacc frontend/ml.grm
 

@@ -17,8 +17,8 @@ struct
 	  		(String.concatWith " " (map S.toString ops))
 	  | ppdec _ = "<unpretty-printed dec>"
 	and ppexp (Handle {exp,match,...}) = "(" ^ppexp exp^ ") handle ..."
-	  | ppexp (App {exps=[],...}) = ""
-	  | ppexp (App {exps=[h],attr=a}) = ppexp h
+	  | ppexp (App {exps=[],...}) = "nullapp"
+	  | ppexp (App {exps=[h],attr=a}) = "app("^(ppexp h)^")"
 	  | ppexp (App {exps=h::t,attr=a}) = 
 	  		ppexp h ^ " (" ^ ppexp (App {exps=t,attr=a}) ^ ")"
 	  | ppexp (BinOp {opr=opr,lhs,rhs,...}) = 
@@ -31,7 +31,7 @@ struct
 	  | ppexp (If {cond,tbr,fbr,...}) = 
 	  	"if " ^ ppexp cond ^ " then " ^ ppexp tbr ^ " else " ^ ppexp fbr
 	  | ppexp (Op {symbol,...}) = "op " ^ S.toString symbol
-	  | ppexp (Var {name,...}) = S.toString name
+	  | ppexp (Var {name,...}) = "(var " ^ S.toString name ^ ")"
 	  | ppexp (Selector {exp,...}) = "#" ^ ppexp exp
 	  | ppexp Unit = "()"
 	  | ppexp (Seq {exps,...}) = 
@@ -105,7 +105,7 @@ struct
 	  | ppopr Assign = ":="
 	  | ppopr Compose = "o"
 	  | ppopr Before = "before"
-	  | ppopr (SOpr s) = S.toString s
+	  | ppopr (SOpr s) = "Sopr("^(S.toString s)^")"
 	and ppmatch l =
 		String.concatWith "\n  | " (
 			map (fn (p,e) => pppat p ^ " => " ^ ppexp e) l
@@ -117,7 +117,7 @@ struct
 	  | pppat (AppPat (h::t)) = pppat h ^ " (" ^ pppat (AppPat t) ^ ")"
 	  | pppat (VarPat {name,...}) = S.toString name
 	  | pppat (OpPat {symbol,...}) = "op " ^ S.toString symbol
-	  | pppat (ConstPat e) = ppexp e
+	  | pppat (ConstPat e) = "constpat("^(ppexp e)^")"
 	  | pppat (WildPat) = "_"
 	  | pppat (TuplePat p) = 
 	  	"(" ^ (String.concatWith ", " (map pppat p)) ^ ")"

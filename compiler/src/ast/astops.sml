@@ -47,6 +47,8 @@ struct
 	  | ast_map_exp f (BinOp {attr,opr,lhs,rhs}) =
 	    (#expfun f) (BinOp {attr=attr,opr=opr,lhs=ast_map_exp f lhs,
 							rhs=ast_map_exp f rhs})
+	  | ast_map_exp f (List {attr,exps}) =
+	    (#expfun f) (List {attr=attr, exps=map (ast_map_exp f) exps})
 	  | ast_map_exp f (Constraint {attr,exp,ty}) =
 	    (#expfun f) (Constraint {attr=attr,exp=ast_map_exp f exp,ty=ty})
 	  | ast_map_exp f (Fn {attr=attr,match=match,symtab}) =
