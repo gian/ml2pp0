@@ -2,7 +2,7 @@ structure Lml =
 struct
  fun initialise () =
   	let
-		val _ = Optimiser.addPass ("nullOpt", fn x => x)
+		val _ = Optimiser.addPass ("nullOpt", fn x => ())
 		val _ = Optimiser.addPass ("constFold", ConstFold.optConstFold) 
 	in
 		()
@@ -21,18 +21,22 @@ struct
 	fun lml (smlfile) = 
     let 
 	    val ast = Parse.parse' smlfile
-		val ast' = Syntax.runAllPasses ast
-		val _ = Symtab.print_scope (Symtab.top_level)
+	
 		val _ = print "AST DUMP:\n"
-		val _ = print (PrettyPrint.prettyPrint ast')
+		val _ = print (PrettyPrint.prettyPrint ast)
+
+		val ast' = Syntax.runAllPasses ast
+
+		val _ = print "SCOPE DUMP:\n"
+		val _ = Symtab.print_scope (Symtab.top_level)
+
 		val _ = print "\nElaborate:\n"
 		val _ = Elaborate.constr ast'
 		val _ = Elaborate.print_constr (!Elaborate.venv) 
 		val _ = print "\n"
-		val ast' = Optimiser.runAllPasses ast
-		val _ = print "AST DUMP:\n"
-		val _ = print (PrettyPrint.prettyPrint ast')
-		val _ = print "\n"
+		val _ = Optimiser.runAllPasses Symtab.top_level
+		val _ = print "SCOPE DUMP (post-Optimiser):\n"
+		val _ = Symtab.print_scope (Symtab.top_level)
 		val l = Intermediate.translate ast'
 		val _ = print "CODE DUMP:\n"
 		val _ = print (Intermediate.emit l [] [])

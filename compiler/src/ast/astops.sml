@@ -118,7 +118,7 @@ struct
 		end
 	val ast_map = ast_map_decs
 
-	val ast_map_top_level f = ast_map_symtab f Symtab.top_level
+	fun ast_map_top_level f = ast_map_symtab f Symtab.top_level
 
 	fun e_attr (Handle {attr,...}) = attr
 	  | e_attr (App {attr,...}) = attr

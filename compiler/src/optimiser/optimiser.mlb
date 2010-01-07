@@ -1,2 +1,2 @@
-(*optimiser/optimiser.sml*)
-(*optimiser/constfold.sml*)
+optimiser/optimiser.sml
+optimiser/constfold.sml

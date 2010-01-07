@@ -1,8 +1,8 @@
-val a = 10
+val a = 10 - 1
 
-val b = 11
+val b = 11 + 51 * 2
 
-val c = 12
+val c = 12 + 9
 
 val d = fn x => x + 1
 
