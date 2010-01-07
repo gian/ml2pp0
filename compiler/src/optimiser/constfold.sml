@@ -49,6 +49,17 @@ fun is_constant (A.Int _) = true
   | is_constant (A.Bool _) = true
   | is_constant _ = false
 
+(* f(f(x)) = f(x) *)
+fun is_idempotent A.BAnd = true
+  | is_idempotent A.BOr = true
+  | is_idempotent A.Mod = true
+  | is_idempotent _ = false
+
+(* f(f(x)) = x *)
+fun (*is_involution A.UMinus = true   
+  | is_involution A.BNot = true 
+  | *)is_involution _ = false
+
 (* has no sideeffects? *)
 fun is_pure node = true
 
@@ -214,6 +225,7 @@ fun opt_associativity (node as (A.BinOp {attr, opr=opra, lhs, rhs=(A.BinOp {attr
 	= if opra = oprb andalso is_associative opra then
 		A.App {attr=[], exps=[
 			A.Var {attr=[], name=(Symbol.fromString "foldany"), symtab=ref (Symtab.symtab ())},
+			A.Op {symbol=AstOps.opr_to_symbol opra,symtab=Symtab.top_level,attr=[]},
 			A.List {attr=[], exps=[lhs,rlhs,rrhs]}]}
 	else
 		node
@@ -221,6 +233,7 @@ fun opt_associativity (node as (A.BinOp {attr, opr=opra, lhs, rhs=(A.BinOp {attr
 	= if opra = oprb andalso is_associative opra then
 		A.App {attr=[], exps=[
 			A.Var {attr=[], name=(Symbol.fromString "foldany"), symtab=ref (Symtab.symtab ())},
+			A.Op {symbol=AstOps.opr_to_symbol opra,symtab=Symtab.top_level,attr=[]},
 			A.List {attr=[], exps=[llhs,llhs,rhs]}]}
 	else
 		node

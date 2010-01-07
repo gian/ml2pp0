@@ -104,7 +104,7 @@ struct
 			fun upd env NONE _ = 
 				raise Fail "[BUG] ast_map_symtab updates unknown symbol"
 			  | upd env (SOME s) (t,SOME e) = 
-			  		Symtab.insert_v st s (t, SOME ((#expfun f) e))
+			  		Symtab.insert_v st s (t, SOME (ast_map_exp f e))
 			  | upd env _ _ = ()
 
 			val vkeys = Symbol.keys (!venv)
@@ -190,6 +190,8 @@ struct
 	  		(fn (SOME (Type t)) => SOME t 
 			  | _ => NONE)
 			(List.find (fn (Type x) => true) (e_attr x))
+
+	fun opr_to_symbol x = Symbol.fromString (PrettyPrint.ppopr x)
 
 	(* FIXME - not all types are compared property *)
 	fun ty_eq (TupleTy l) (TupleTy m) = false 
