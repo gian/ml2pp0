@@ -78,6 +78,7 @@ struct
 				end
 				) terms
 		end
+	  | tup_ins symtab t NONE = raise Fail "tup_ins got NONE for expression"
 
 	val wv = ref 100
 
@@ -87,9 +88,12 @@ struct
 	fun patToSt scope p e' =
 		(case p of 
 				VarPat {attr,name,symtab} =>
-					(print ("INSERTING: " ^ Symbol.toString name ^ "\n");
-					(Symtab.insert_v symtab name (NONE,e'));
-					 VarPat {attr=attr,name=name,symtab=scope})
+					let
+						val _ = Symtab.insert_v scope name (NONE,e')
+					 	val pat' = VarPat {attr=attr,name=name,symtab=scope}
+					in
+						pat'
+					end
 			  | OpPat {attr,symbol,symtab} =>
 			  		(Symtab.insert_v symtab symbol (NONE,e'); p)
 					(* FIXME *)
@@ -143,13 +147,15 @@ struct
 	  | collapse_exp scope (Fn {attr=attr,match=match,symtab}) =
 	  	let
 			val sc = ref (Symtab.symtab scope)
-		in
-	     (Fn {attr=attr,
+
+			val f = (Fn {attr=attr,
 						 match=map (fn (x,y) => (
 						 	(patToSt sc x NONE,
 							 collapse_exp sc y))) match,
 							 symtab=sc})
-		end
+		in
+			f
+	     end
 	  | collapse_exp scope (If {attr,cond,tbr,fbr}) =
 	  	 (If {attr=attr,
 						 cond=collapse_exp scope cond,

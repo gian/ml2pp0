@@ -92,7 +92,6 @@ struct
 			  | (SOME t,_) => t) handle _ => (print "Var raised exn\n";
 			  									fresh_ty())
 
-			val _ = print ("Var: " ^ Symbol.toString name ^ " has ty " ^ PrettyPrint.ppty rt ^ "\n")
 		in
 			rt
 		end
@@ -164,6 +163,7 @@ struct
 	  | constr_p (VarPat {name,symtab,...}) =
 	  	let
 			val r = fresh_ty ()
+			
 			val (_,e) = Symtab.lookup_v symtab name
 			val _ = Symtab.insert_v symtab name (SOME r, e)
 		in
@@ -242,10 +242,8 @@ struct
 			(List.app (fn (s,(SOME t,e)) =>
 				upd venv (Symbol.unhash s) 
 					(SOME (substinty tyX tyT t),e)
-					| _ => ()
-				) vkeys;
-			(* print "\nSubst Env:\n";
-			 Symtab.print_scope symtab*) ())
+					| _ => ())
+				) vkeys
 		end
 
 	and	substinprog (PolyTy tyX) tyT = Symtab.top_level 
@@ -289,7 +287,6 @@ struct
 		
 
 			val constr' = map (fn (l,r) => (substinty tyX tyT l, substinty tyX tyT r)) constr
-		val _ = print_constr constr'
 		in
 			constr'
 		end

@@ -40,9 +40,12 @@ struct
 	  |	MOV of store * store
 	  |	LABEL of label
 	  | LIT_INT of int
-	  | RET of store
+	  | RET of Ast.ty * store
+	  | CALL of store * store * store
 	  | FUNCTION of store * Ast.ty * (store * Ast.ty) list * ir list
 	  | UnconvertedExp of Ast.exp
+
+	val funs = ref [] : ir list ref
 
 	fun trans_e (BinOp {opr=p,lhs,rhs,...}) =
 		let 
@@ -61,10 +64,13 @@ struct
 		end
 	  | trans_e (Var {name,symtab,...}) =
 	  	let
+			val _ = print "CODEGEN: Var\n"
 			val r = case lookup name of NONE => 
 						let
 							val r' = register ()
 							val _ = insert name r'
+							(* TODO Do lookup here.
+								Should check for function type, and return label and types. *)
 						in
 							r'
 						end
@@ -74,6 +80,8 @@ struct
 		end
 	  | trans_e (Fn {attr,match,symtab}) =
 	  	let
+			val _ = print "CODEGEN: Fn\n"
+
 			val f = hd match (* FIXME process more than one clause *)
 			val fname = label ()
 			val ty = Types.tyInt
@@ -86,10 +94,22 @@ struct
 						end
 						| _ => raise Fail "Unhandled pat in codegen")
 			val (ret,body) = trans_e (#2 f)
-			val body' = body @ [RET ret]
+			val body' = body @ [RET (Types.tyInt,ret)]
+
+			val _ = funs := !funs @ [FUNCTION (fname,ty,pat,body')]
 		in
-			(fname, [FUNCTION (fname,ty,pat,body')])
+			(fname, [])
 		end
+	  | trans_e (App {exps=[f,x],...}) = 
+	  	let
+			val _ = print "APP!\n"
+			val rt = register ()
+			val (r2,i2) = trans_e f
+			val (r1,i1) = trans_e x
+		in
+			(rt, i2 @ i1 @ [CALL (rt, r2, r1)])
+		end
+	  | trans_e (p as App x) = raise Fail ("APP: " ^ PrettyPrint.ppexp p)
 	  | trans_e (Int i) =
 	  	let
 			val r = register ()
@@ -118,7 +138,7 @@ struct
 	  | emit' (SUB ops) = fmt "sub" "i32" ops
 	  | emit' (MUL ops) = fmt "mul" "i32" ops
 	  | emit' (AND ops) = fmt "and" "i32" ops
-	  | emit' (RET r) = "ret " ^ emit_r r
+	  | emit' (RET (t,r)) = "ret " ^ emit_ty t ^ " " ^ emit_r r
 	  | emit' (FUNCTION (n,rt,args,body)) = 
 	  	"define fastcc " ^ emit_ty rt ^ " " ^
 		emit_r n ^ "(" ^
@@ -127,10 +147,16 @@ struct
 		") {\n\t\tentry:\n\t\t" ^ 
 		(String.concatWith "\n\t\t" (map emit' body)) ^
 		"\n\t}"
+	  | emit' (CALL (rt,f,a)) = 
+	  	emit_r rt ^ " = call fastcc i32 " ^ emit_r f ^ "(i32 " ^ emit_r a ^ ")"
 	  | emit' _ = "# unemitted"
 
-	fun emit [] = "\n"
-	  | emit (h::t) = "\t" ^ emit' h ^ "\n"
+	fun emit_bd [] = "\n"
+	  | emit_bd (h::t) = "\t" ^ emit' h ^ "\n" ^ emit_bd t
+
+	fun emit l =
+		emit_bd (!funs) ^ 
+		"\n\ndefine fastcc i32 @main() {\nentry:\n" ^ emit_bd l ^ "\n\tret i32 0\n}\n"
 
 	fun translate symtab =
 		let
@@ -140,11 +166,13 @@ struct
 		in
 			List.foldl (fn ((s,(t,SOME e)),instr) =>
 				let
+					val _ = print ("Translating " ^ Symbol.toString (valOf (Symbol.unhash s)) ^ " = " ^ PrettyPrint.ppexp e ^ "\n")
 					val (r,i) = trans_e e
+					val _ = insert (valOf (Symbol.unhash s)) r
 				in
 					i @ instr
 				end
-				| _ => []) [] vkeys
+				| (_,instr) => instr) [] vkeys
 		end
 end
 

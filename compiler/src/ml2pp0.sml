@@ -44,7 +44,13 @@ struct
 		val _ = Symtab.print_scope (Symtab.top_level)
 		val l = Intermediate.translate Symtab.top_level
 		val _ = print "CODE DUMP:\n"
-		val _ = print (Intermediate.emit l)
+		val code = Intermediate.emit l
+		val _ = print code 
+
+		val outfile = smlfile ^ ".ll"
+		val fp = TextIO.openOut outfile
+		val _ = TextIO.output (fp, code)
+		val _ = TextIO.closeOut fp
 	in
 		()
 	end
