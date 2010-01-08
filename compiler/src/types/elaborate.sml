@@ -168,7 +168,6 @@ struct
 	and constr' (ValDec v) =
 		(case (hd (#valBind v)) of
 			(ValBind (Wild,e)) => constr_e e
-		  | (ValBind (_,e)) => constr_e e
 		  | _ => raise Fail "unknown valdec bind\n")
 	  | constr' _ = fresh_ty ()
 
@@ -180,8 +179,6 @@ struct
 				raise Fail "[BUG] constr updates unknown symbol"
 			  | upd env (SOME s) (t,e) = 
 			  		Symtab.insert_v symtab s (t,e)
-			  | upd env _ _ = ()
-
 
 			val vkeys = Symbol.keys (!ve)
 		in
@@ -221,6 +218,7 @@ struct
 		in
         	f tyS
 		end
+	  | substinty _ _ _ = raise Fail "substinty: invalid argument"
 
 	and substinenv tyX tyT symtab = 
 		let
@@ -232,7 +230,6 @@ struct
 				raise Fail "[BUG] constr updates unknown symbol"
 			  | upd env (SOME s) (t,e) = 
 			  		Symtab.insert_v symtab s (t,e)
-			  | upd env _ _ = ()
 		in
 			(List.app (fn (s,(SOME t,e)) =>
 				upd venv (Symbol.unhash s) 
@@ -243,7 +240,8 @@ struct
 			 Symtab.print_scope symtab*) ())
 		end
 
-	and substinprog tyX tyT =
+	and	substinprog (PolyTy tyX) tyT = Symtab.top_level 
+	  |	substinprog tyX tyT =
 		let
 			fun ef (f as Fn {symtab,...}) = 
 				(substinenv tyX tyT symtab; f)
@@ -313,6 +311,7 @@ struct
      in
         oc tyT
      end
+	  | occursin _ _ = raise Fail "Non-UVar argument to occursin"
 
 	and unify [] = []
       | unify ((tyS,UVar x) :: rest) =  

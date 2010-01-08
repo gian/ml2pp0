@@ -79,6 +79,11 @@ struct
 				) terms
 		end
 
+	val wv = ref 100
+
+	fun mkUnique () = 
+		Symbol.fromString ("__wild_" ^ Int.toString (wv := !wv +1; !wv))
+
 	fun patToSt scope p e' =
 		(case p of 
 				VarPat {attr,name,symtab} =>
@@ -89,7 +94,10 @@ struct
 			  | ListPat l => tup_ins scope p e'
 			  | AppPat l => raise Fail "Not implemented AppDec" 
 			  | AsPat (l,r) => raise Fail "Not implemented AsPat"
-			  | ConstraintPat (p,t) => raise Fail "Not implemented Constr"
+			  | ConstraintPat (p,t) => raise Fail "Not implemented cons"
+			  | WildPat => 
+			  		Symtab.insert_v scope (mkUnique()) (NONE,SOME e')
+			  | p' => raise Fail ("Unimplemented in patToSt" ^ PrettyPrint.pppat p')
 			)
 
 

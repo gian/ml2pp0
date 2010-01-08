@@ -47,8 +47,7 @@ struct
 
 	fun trans_d (ValDec v) =
 		(case (hd (#valBind v)) of
-			(ValBind (Wild,e)) => trans_e e
-		  | (ValBind (_,e)) => trans_e e
+		    (ValBind (_,e)) => trans_e e
 		  | b => (scalar_store(),[UnconvertedDec (ValDec v)], []))
 	  | trans_d (FunDec f) = (NullStore, [LABEL (label())], [])
 	  | trans_d d = (scalar_store(), [UnconvertedDec d], [])
@@ -62,7 +61,8 @@ struct
 			             | Minus => [SUB (r3, r1, r2)]
 						 | Times => [MUL (r3, r1, r2)]
 						 | Div => [DIV (r3, r1, r2)]
-						 | Equal => [AND (r3, r1, r2)])
+						 | Equal => [AND (r3, r1, r2)]
+						 | _ => raise Fail "Unhandled binop")
 		in
 			(r3, i1 @ i2 @ cn, d1 @ d2)
 		end
