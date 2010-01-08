@@ -10,6 +10,7 @@ struct
 	val tenv = ref [] : constraint_set ref
 	val venv = ref [] : constraint_set ref
 	val tv = ref 0;
+	val pv = ref ~1;
 
 	fun add_vconstr (l,r) = venv := (l,r) :: (!venv)
 	fun add_tconstr (l,r) = tenv := (l,r) :: (!tenv)
@@ -24,6 +25,7 @@ struct
 		- no, we shouldn't.  All tyvars can be top-level, silly.
 	*)
 	fun fresh_ty () = UVar (tv := !tv + 1; !tv)
+	fun fresh_poly () = PolyTy (pv := !pv + 1; !pv)
 
 	fun print_constr [] = ()
 	  | print_constr ((l,r)::t) = 
@@ -81,6 +83,8 @@ struct
 					r'
 				end
 			  | (SOME t,_) => t)
+
+			val _ = print ("Var: " ^ Symbol.toString name ^ " has ty " ^ PrettyPrint.ppty rt ^ "\n")
 		in
 			rt
 		end
@@ -94,7 +98,7 @@ struct
 				let
 					val r1 = constr_e exp
 					val r2 = fresh_ty ()
-					val _ = add_vconstr (ArrowTy (r, r2), r1)
+					val _ = add_vconstr (r1, ArrowTy (r, r2))
 				in
 					r2
 				end) init exps'
@@ -102,11 +106,11 @@ struct
 	  | constr_e (Fn {attr,match,symtab}) =
 	  	let
 			val (p,e) = hd match
+			val r0 = fresh_ty ()
 			val r1 = constr_p p
 			val r2 = constr_e e
-			val r0 = fresh_ty ()
 			val _ = constr symtab
-			val _ = add_vconstr (r0, ArrowTy (r1,r2))
+			val _ = add_vconstr (ArrowTy (r1,r2), r0)
 			val _ = app (fn (p',e') => 
 							let
 								val r3 = constr_p p'
@@ -170,7 +174,7 @@ struct
 
 	and constr symtab = 
 		let
-			val {venv,tenv} = !symtab
+			val {venv=ve,tenv} = !symtab
 
 			fun upd env NONE _ = 
 				raise Fail "[BUG] constr updates unknown symbol"
@@ -179,7 +183,7 @@ struct
 			  | upd env _ _ = ()
 
 
-			val vkeys = Symbol.keys (!venv)
+			val vkeys = Symbol.keys (!ve)
 		in
 			List.app (fn (s,(t,SOME e)) =>
 				if s = 
@@ -187,27 +191,38 @@ struct
 				then () else
 				let
 					val r = fresh_ty ()
-					val _ = upd venv (Symbol.unhash s) (SOME r, SOME e)
+					val _ = upd ve (Symbol.unhash s) (SOME r, SOME e)
 					val t' = constr_e e
 				in
-					add_vconstr (r, t')
+					(add_vconstr (r, t');
+					 venv := unify (!venv);
+					 venv := generalise (!venv))
 				end
 			  | (s,(t,NONE)) => ()) vkeys
 		end
 
 
-	fun substinty (UVar x1) tyT tyS =
-     let
+	and substinty (UVar x1) tyT tyS =
+		let
 
-        fun f tyS = 
-         (case tyS of (ArrowTy(tyS1,tyS2)) => (ArrowTy(f tyS1,f tyS2))
+        	fun f tyS = 
+         	(case tyS of (ArrowTy(tyS1,tyS2)) => (ArrowTy(f tyS1,f tyS2))
                     | (UVar n) => if n = x1 then tyT else (UVar n)
 					| x => x)
-     in
-        f tyS
-     end
+     	in
+        	f tyS
+     	end
+	  | substinty (PolyTy x1) tyT tyS =
+	  	let
+	 		fun f tyS = 
+        	(case tyS of (ArrowTy(tyS1,tyS2)) => (ArrowTy(f tyS1,f tyS2))
+                    | (PolyTy n) => if n = x1 then tyT else (PolyTy n)
+					| x => x)
+		in
+        	f tyS
+		end
 
-	fun substinenv tyX tyT symtab = 
+	and substinenv tyX tyT symtab = 
 		let
 			val {venv,tenv} = !symtab
 
@@ -228,7 +243,7 @@ struct
 			 Symtab.print_scope symtab*) ())
 		end
 
-	fun substinprog tyX tyT =
+	and substinprog tyX tyT =
 		let
 			fun ef (f as Fn {symtab,...}) = 
 				(substinenv tyX tyT symtab; f)
@@ -258,7 +273,7 @@ struct
 		end
 
 
-	fun substinconstr tyX tyT constr =
+	and substinconstr tyX tyT constr =
 		let
 			val _ = substinprog tyX tyT
 
@@ -273,8 +288,23 @@ struct
 			constr'
 		end
 
+	and substinconstr_rhs tyX tyT constr =
+		let
+			val _ = substinprog tyX tyT
+			
+			val _ = print ("   * RHS Type Sub: [" ^
+							PrettyPrint.ppty tyX ^ "/" ^
+							PrettyPrint.ppty tyT ^ "]\n")
+		
+
+			val constr' = map (fn (l,r) => (l, substinty tyX tyT r)) constr
+		val _ = print_constr constr'
+		in
+			constr'
+		end
+
 	(* FIXME incomplete *)
-	fun occursin (UVar tyX) tyT =
+	and occursin (UVar tyX) tyT =
 		let
 			fun oc tyT = (case tyT of
 				ArrowTy(tyT1,tyT2) => oc tyT1 orelse oc tyT2
@@ -284,7 +314,7 @@ struct
         oc tyT
      end
 
-	fun unify [] = []
+	and unify [] = []
       | unify ((tyS,UVar x) :: rest) =  
 		if ty_eq tyS (UVar x) then unify rest
         else if occursin (UVar x) tyS then
@@ -298,9 +328,36 @@ struct
         else (unify (substinconstr (UVar x) tyT rest)) @ [(UVar x,tyT)]
      | unify ((ArrowTy(tyS1,tyS2),ArrowTy(tyT1,tyT2)) :: rest) =
         unify ((tyS1,tyT1) :: (tyS2,tyT2) :: rest)
+	 | unify ((PolyTy a, VarTy b) :: rest) = 
+            (unify (substinconstr (PolyTy a) (VarTy b) rest)) @ 
+				[(PolyTy a,VarTy b)]
+     | unify ((PolyTy a, PolyTy b) :: rest) = 
+	 		if a = b then unify rest 
+			else raise (Fail 
+				("Unsolvable polymorphic unification! " ^ 
+					PrettyPrint.ppty (PolyTy a) ^ " <> " ^ 
+					PrettyPrint.ppty (PolyTy b) ^ "\n"))
      | unify ((VarTy (a,_), VarTy (b,_)) :: rest) =
         if a = b then unify rest else (raise (Fail ("Unsolvable: " ^ Symbol.toString a ^ " <> " ^ Symbol.toString b)))
      | unify ((tyS,tyT)::rest) = raise (Fail ("Unsolvable: " ^ PrettyPrint.ppty tyS ^ " <> " ^ PrettyPrint.ppty tyT))
+
+	and generalise env =
+		let
+			fun collect_tyvars (UVar s) = [UVar s]
+			  | collect_tyvars (ArrowTy (t1,t2)) =
+			  		collect_tyvars t1 @ collect_tyvars t2
+			  | collect_tyvars x = []
+
+			val vars : ty list = List.foldl (fn ((l,r),a) => 
+						collect_tyvars l @ collect_tyvars r @ a) [] env
+
+			val env' = List.foldl (fn (a,e) => 
+						substinconstr_rhs a (fresh_poly ()) e) env vars
+
+			val _ = pv := ~1
+		in
+			env'
+		end
 
 	fun unify_constraints () = unify (List.rev (!venv))
 

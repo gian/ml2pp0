@@ -86,6 +86,8 @@ struct
 	  | ppty (TyConTy (t,t')) = 
 	  	"(" ^ (String.concatWith "," (map ppty t')) ^ ") " ^ ppty t
 	  | ppty (UVar i) = "?X" ^ Int.toString i
+	  | ppty (PolyTy i) = "'" ^ String.str 
+	  							(Char.chr (Char.ord #"a" + i))
 	  | ppty _ = "<unpretty-printed ty>"
 	and ppopr BOr = "orelse"
 	  | ppopr BAnd = "andalso"

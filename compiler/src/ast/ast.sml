@@ -89,6 +89,7 @@ struct
 		  | TyConTy of ty * ty list
 		  | StrTy of symbol list
 		  | UVar of int
+		  | PolyTy of int
 		 and attr =
 		 	Left of int
 		  | Right of int

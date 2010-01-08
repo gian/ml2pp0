@@ -1,5 +1,4 @@
 fun id x = x
 
-fun double x = 2 * x
+val a = id 10
 
-fun myDoubler y = id (double y + double 10)
