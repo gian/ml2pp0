@@ -45,7 +45,7 @@ struct
 
 	val pm_rhs = ref 0
 
-	fun tup_ins symtab t e =
+	fun tup_ins symtab t (SOME e) =
 		let
 			val terms = collect_terms t
 
@@ -87,16 +87,19 @@ struct
 	fun patToSt scope p e' =
 		(case p of 
 				VarPat {attr,name,symtab} =>
-					Symtab.insert_v symtab name (NONE,SOME e')
+					(print ("INSERTING: " ^ Symbol.toString name ^ "\n");
+					(Symtab.insert_v symtab name (NONE,e'));
+					 VarPat {attr=attr,name=name,symtab=scope})
 			  | OpPat {attr,symbol,symtab} =>
-			  		Symtab.insert_v symtab symbol (NONE,SOME e')
-			  | TuplePat l => tup_ins scope p e'
-			  | ListPat l => tup_ins scope p e'
+			  		(Symtab.insert_v symtab symbol (NONE,e'); p)
+					(* FIXME *)
+			  | TuplePat l => (tup_ins scope p e'; p)
+			  | ListPat l => (tup_ins scope p e'; p)
 			  | AppPat l => raise Fail "Not implemented AppDec" 
 			  | AsPat (l,r) => raise Fail "Not implemented AsPat"
 			  | ConstraintPat (p,t) => raise Fail "Not implemented cons"
 			  | WildPat => 
-			  		Symtab.insert_v scope (mkUnique()) (NONE,SOME e')
+			  		(Symtab.insert_v scope (mkUnique()) (NONE,e'); p)
 			  | p' => raise Fail ("Unimplemented in patToSt" ^ PrettyPrint.pppat p')
 			)
 
@@ -138,11 +141,15 @@ struct
 	  | collapse_exp scope (Constraint {attr,exp,ty}) =
 	     (Constraint {attr=attr,exp=collapse_exp scope exp,ty=ty})
 	  | collapse_exp scope (Fn {attr=attr,match=match,symtab}) =
+	  	let
+			val sc = ref (Symtab.symtab scope)
+		in
 	     (Fn {attr=attr,
-						 match=map (fn (x,y) =>
-						 	(x,
-							 collapse_exp symtab y)) match,
-							 symtab=symtab})
+						 match=map (fn (x,y) => (
+						 	(patToSt sc x NONE,
+							 collapse_exp sc y))) match,
+							 symtab=sc})
+		end
 	  | collapse_exp scope (If {attr,cond,tbr,fbr}) =
 	  	 (If {attr=attr,
 						 cond=collapse_exp scope cond,
@@ -162,16 +169,17 @@ struct
 	and collapse_bind scope (ValBind (p,e)) =  
 		let
 			val e' = collapse_exp scope e
-			val _ = patToSt scope p e'	
+			val _ = patToSt scope p (SOME e')	
 		in
 			()
 		end
 	  | collapse_bind scope (ValRecBind (p,m)) = 
 	  	let
 			val sc = ref (Symtab.symtab scope)
-			val m' = map (fn (pat,exp) => (pat,collapse_exp sc exp)) m
+			val m' = map (fn (pat,exp) => (
+			pat,collapse_exp sc exp)) m
 			val e' = Fn {attr=[],match=m',symtab=sc}
-			val _ = patToSt scope p e'
+			val _ = patToSt scope p (SOME e')
 		in
 			()
 		end

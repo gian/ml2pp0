@@ -89,7 +89,8 @@ struct
 				in
 					r'
 				end
-			  | (SOME t,_) => t)
+			  | (SOME t,_) => t) handle _ => (print "Var raised exn\n";
+			  									fresh_ty())
 
 			val _ = print ("Var: " ^ Symbol.toString name ^ " has ty " ^ PrettyPrint.ppty rt ^ "\n")
 		in
