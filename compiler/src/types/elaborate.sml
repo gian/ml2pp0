@@ -65,6 +65,13 @@ struct
 		in
 			(r1,r1,r1)
 		end
+	  | opr_constr Mod = (Types.tyInt, Types.tyInt, Types.tyInt) 
+	  | opr_constr Equal = (fresh_ty (), fresh_ty (), Types.tyBool) 
+	  | opr_constr NEqual = (fresh_ty (), fresh_ty (), Types.tyBool) 
+	  | opr_constr GT = (Types.tyInt, Types.tyInt, Types.tyBool) 
+	  | opr_constr LT = (Types.tyInt, Types.tyInt, Types.tyBool) 
+	  | opr_constr LTEqual = (Types.tyInt, Types.tyInt, Types.tyBool) 
+	  | opr_constr GTEqual = (Types.tyInt, Types.tyInt, Types.tyBool) 
 	  | opr_constr _ = (fresh_ty (), fresh_ty (), fresh_ty ())
 
 	fun constr_binop (lc,rc,gc) l r ret =

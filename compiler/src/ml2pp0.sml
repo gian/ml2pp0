@@ -42,9 +42,9 @@ struct
 		val _ = Optimiser.runAllPasses Symtab.top_level
 		val _ = print "SCOPE DUMP (post-Optimiser):\n"
 		val _ = Symtab.print_scope (Symtab.top_level)
-		val l = Intermediate.translate ast'
+		val l = Intermediate.translate Symtab.top_level
 		val _ = print "CODE DUMP:\n"
-		val _ = print (Intermediate.emit l [] [])
+		val _ = print (Intermediate.emit l)
 	in
 		()
 	end
