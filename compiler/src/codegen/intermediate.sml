@@ -25,24 +25,26 @@ struct
 
 	fun register () = Reg (rc := !rc + 1; !rc)
 	fun name () = Name (nc := !nc + 1; !nc)
-	fun label () = Name (lc := !lc + 1; !lc)
+	fun label () = (lc := !lc + 1; !lc)
 
 	datatype ir =
 		ADD of store * store * store
 	  |	ADDI of store * store * int
 	  |	AND of store * store * store 
 	  |	ANDI of store * store * int
+	  | ICMP of store * string * store * store 
 	  |	SUB of store * store * store
 	  |	SUBI of store * store * int
 	  | DIV of store * store * store
 	  | DIVI of store * store * int
-	  |	BRZ of name
-	  |	BRNZ of name
 	  |	MUL of store * store * store
 	  |	MULI of store * store * int
 	  |	MOV of store * store
+	  | PHI of store * Ast.ty * (store * int) * (store * int)
 	  |	LABEL of int 
 	  | LIT_INT of int
+	  | CBR of store * int * int
+	  | BR of int
 	  | RET of Ast.ty * store
 	  | CALL of store * store * store
 	  | FUNCTION of store * Ast.ty * (store * Ast.ty) list * ir list
@@ -61,7 +63,12 @@ struct
 			             | Minus => [SUB (r3, r1', r2')]
 						 | Times => [MUL (r3, r1', r2')]
 						 | Div => [DIV (r3, r1', r2')]
-						 | Equal => [AND (r3, r1', r2')]
+						 | Equal => [ICMP (r3, "eq", r1', r2')]
+						 | NEqual => [ICMP (r3, "ne", r1', r2')]
+						 | GT => [ICMP (r3, "sgt", r1', r2')]
+						 | LT => [ICMP (r3, "slt", r1', r2')]
+						 | GTEqual => [ICMP (r3, "sge", r1', r2')]
+						 | LTEqual => [ICMP (r3, "sle", r1', r2')]
 						 | _ => raise Fail "Unhandled binop")
 		in
 			(r3, i1 @ i2 @ cn)
@@ -117,6 +124,33 @@ struct
 		in
 			(res, i2 @ i1 @ [CALL (res, r2', r1')])
 		end
+	  | trans_e (If {attr,cond,tbr,fbr}) res = 
+	  	let
+			val (cond',ci) = trans_e cond (register ())
+			val (tbr',tci) = trans_e tbr (register ())
+			val (fbr',fci) = trans_e fbr (register ())
+
+			val tlab = label ()
+			val flab = label ()
+			val phi = label ()
+
+			val bri = [CBR (cond', tlab, flab)]
+
+			val phii = [PHI (res, Types.tyInt, (tbr',tlab), (fbr',flab))]
+		in
+			(res, 
+				ci
+			  @ bri
+			  @	[LABEL tlab]
+			  @ tci
+			  @ [BR phi]
+			  @ [LABEL flab]
+			  @ fci
+			  @ [BR phi]
+			  @ [LABEL phi]
+			  @ phii
+			)
+		end
 	  | trans_e (p as App x) res = raise Fail ("APP: " ^ PrettyPrint.ppexp p)
 	  | trans_e (Int i) r =
 			(r, [ADD (r,IntImm 0,IntImm i)])
@@ -144,7 +178,18 @@ struct
 	  | emit' (MUL ops) = fmt "mul" "i32" ops
 	  | emit' (AND ops) = fmt "and" "i32" ops
 	  | emit' (RET (t,r)) = "ret " ^ emit_ty t ^ " " ^ emit_r r
-	  | emit' (LABEL l) = "lab" ^ Int.toString l ^ ":" 
+	  | emit' (LABEL l) = "lab" ^ Int.toString l ^ ":"
+	  | emit' (ICMP (r,opr,o1,o2)) = emit_r r ^ " = icmp " ^ opr ^ 
+	  									" i32 " ^ emit_r o1 ^ ", " ^
+										emit_r o2
+	  | emit' (CBR (s,l1,l2)) = "br i1 " ^ emit_r s ^ ", label %lab" ^
+	  							Int.toString l1 ^ ", label %lab" ^
+								Int.toString l2
+	  | emit' (BR i) = "br label %lab" ^ Int.toString i
+	  | emit' (PHI (ret,ty,(r1,l1),(r2,l2))) =
+	  		emit_r ret ^ " = phi " ^ emit_ty ty ^ " [ " ^ 
+				emit_r r1 ^ ", %lab" ^ Int.toString l1 ^ " ], [ " ^
+				emit_r r2 ^ ", %lab" ^ Int.toString l2 ^ " ]"
 	  | emit' (FUNCTION (n,rt,args,body)) = 
 	  	"define fastcc " ^ emit_ty rt ^ " " ^
 		emit_r n ^ "(" ^
