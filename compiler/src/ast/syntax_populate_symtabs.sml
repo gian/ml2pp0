@@ -3,6 +3,9 @@ struct
 	type syntax_pass_param = unit
 
 	open Ast
+
+	val ut = ref 10000
+	fun mkFresh () = UVar (ut := !ut + 1; !ut)
 	
 	(* Do a pass over the AST and populate symtab fields appropriately *)
 	fun symtab_popl_decs scope x = 
@@ -40,12 +43,13 @@ struct
 							rhs=symtab_popl_exp scope rhs})
 	  | symtab_popl_exp scope (Constraint {attr,exp,ty}) =
 	     (Constraint {attr=attr,exp=symtab_popl_exp scope exp,ty=ty})
-	  | symtab_popl_exp scope (Fn {attr=attr,match=match,symtab}) =
+	  | symtab_popl_exp scope (Fn {attr=attr,match=match,symtab,ty}) =
 	     (Fn {attr=attr,
 						 match=map (fn (x,y) =>
 						 	(symtab_popl_pat symtab x,
 							 symtab_popl_exp symtab y)) match,
-							 symtab=Symtab.set_parent scope symtab})
+							 symtab=Symtab.set_parent scope symtab,
+							 ty=SOME (mkFresh ())})
 	  | symtab_popl_exp scope (If {attr,cond,tbr,fbr}) =
 	  	 (If {attr=attr,
 						 cond=symtab_popl_exp scope cond,

@@ -110,7 +110,7 @@ struct
 					r2
 				end) init exps'
 		end
-	  | constr_e (Fn {attr,match,symtab}) =
+	  | constr_e (Fn {attr,match,symtab,ty=SOME ty}) =
 	  	let
 			val (p,e) = hd match
 			val r0 = fresh_ty ()
@@ -118,6 +118,7 @@ struct
 			val r2 = constr_e e
 			val _ = constr symtab
 			val _ = add_vconstr (ArrowTy (r1,r2), r0)
+			val _ = substinprog ty r0 
 			val _ = app (fn (p',e') => 
 							let
 								val r3 = constr_p p'
@@ -249,8 +250,13 @@ struct
 	and	substinprog (PolyTy tyX) tyT = Symtab.top_level 
 	  |	substinprog tyX tyT =
 		let
-			fun ef (f as Fn {symtab,...}) = 
-				(substinenv tyX tyT symtab; f)
+			fun ef (f as Fn {symtab,attr,match,ty=SOME ty}) = 
+				(substinenv tyX tyT symtab; 
+				 Fn {symtab=symtab,
+				 	 attr=attr,
+				     match=match,
+					 ty=SOME (substinty tyX tyT ty)})
+			  | ef (f as Fn {ty=NONE,...}) = f
 			  | ef (f as Let {symtab,...}) =
 			  	(substinenv tyX tyT symtab; f)
 			  | ef f = f

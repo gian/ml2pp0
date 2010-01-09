@@ -140,5 +140,12 @@ struct
 			val _ = print_env (!tenv)
 		in () end
 
+	(* FIXME Temporarily putting built-in defs here *)
+
+	fun builtin s t1 t2 = insert_v top_level (Symbol.fromString s)
+		(SOME (Ast.ArrowTy(t1,t2)), SOME (Ast.BuiltIn s))
+
+(*	val _ = (builtin "puts" Types.tyString Types.tyInt) *)
+
 end
 

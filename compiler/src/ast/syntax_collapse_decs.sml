@@ -69,7 +69,8 @@ struct
 											 name=term,
 											 symtab=st
 										})],
-									symtab=st
+									symtab=st,
+									ty = NONE
 									},
 								e'
 						  	]
@@ -144,7 +145,7 @@ struct
 							rhs=collapse_exp scope rhs})
 	  | collapse_exp scope (Constraint {attr,exp,ty}) =
 	     (Constraint {attr=attr,exp=collapse_exp scope exp,ty=ty})
-	  | collapse_exp scope (Fn {attr=attr,match=match,symtab}) =
+	  | collapse_exp scope (Fn {attr=attr,match=match,symtab,ty}) =
 	  	let
 			val sc = ref (Symtab.symtab scope)
 
@@ -152,7 +153,8 @@ struct
 						 match=map (fn (x,y) => (
 						 	(patToSt sc x NONE,
 							 collapse_exp sc y))) match,
-							 symtab=sc})
+							 symtab=sc,
+							 ty=ty})
 		in
 			f
 	     end
@@ -184,7 +186,7 @@ struct
 			val sc = ref (Symtab.symtab scope)
 			val m' = map (fn (pat,exp) => (
 			pat,collapse_exp sc exp)) m
-			val e' = Fn {attr=[],match=m',symtab=sc}
+			val e' = Fn {attr=[],match=m',symtab=sc,ty=NONE}
 			val _ = patToSt scope p (SOME e')
 		in
 			()

@@ -475,7 +475,7 @@ expnode : exp HANDLE match      (A.Handle {attr=[],exp=exp, match=match})
 								{attr=[],opr=A.BAnd,lhs=exp1,rhs=exp2})
         | exp COLON ty          (A.Constraint {attr=[],exp=exp,ty=ty})
         | app_exp               (A.App {attr=[],exps=app_exp})
-        | FN match              (A.Fn {attr=[],match=match,
+        | FN match              (A.Fn {attr=[],match=match,ty=NONE,
 							  	 symtab=ref (T.empty ())})
         | CASE exp OF match     (A.Case {attr=[],exp=exp,match=match})
         | WHILE exp DO exp      (A.While {attr=[],test=exp1,exp = exp2})

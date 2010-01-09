@@ -40,7 +40,7 @@ struct
 		  | App of {attr : attr list, exps : exp list}
 		  | BinOp of {attr : attr list, opr : opr, lhs: exp, rhs: exp}
 		  | Constraint of {attr : attr list, exp : exp, ty : ty}
-		  | Fn of {attr : attr list, match : (pat * exp) list, symtab : (ty option * exp option) symtab ref}
+		  | Fn of {attr : attr list, match : (pat * exp) list, ty : ty option, symtab : (ty option * exp option) symtab ref}
 		  | Case of {attr: attr list, exp: exp, match: (pat * exp) list}
 		  | While of {attr: attr list, test : exp, exp : exp}
 		  | If of {attr:attr list, cond: exp, tbr: exp, fbr: exp}
@@ -60,6 +60,7 @@ struct
 		  | String of string
 		  | Char of char
 		  | Bool of bool
+		  | BuiltIn of string
 		 and pat =
 			AsPat of pat * pat
 		  | ConstraintPat of pat * ty

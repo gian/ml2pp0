@@ -51,12 +51,13 @@ struct
 	    (#expfun f) (List {attr=attr, exps=map (ast_map_exp f) exps})
 	  | ast_map_exp f (Constraint {attr,exp,ty}) =
 	    (#expfun f) (Constraint {attr=attr,exp=ast_map_exp f exp,ty=ty})
-	  | ast_map_exp f (Fn {attr=attr,match=match,symtab}) =
+	  | ast_map_exp f (Fn {attr=attr,match=match,symtab,ty}) =
 	    (#expfun f) (Fn {attr=attr,
 						 match=map (fn (x,y) =>
 						 	(ast_map_pat f x,
 							 ast_map_exp f y)) match,
-							 symtab=ast_map_symtab f symtab})
+							 symtab=ast_map_symtab f symtab,
+							 ty = ty})
 	  | ast_map_exp f (If {attr,cond,tbr,fbr}) =
 	  	(#expfun f) (If {attr=attr,
 						 cond=ast_map_exp f cond,
@@ -158,7 +159,8 @@ struct
 	  | set_e_attr a (Fn r) =
 	  	Fn {attr=a :: (#attr r),
 			match= #match r,
-			symtab= #symtab r}
+			symtab= #symtab r,
+			ty = #ty r}
 	  | set_e_attr a (Case r) = Case r 
 	  | set_e_attr a (While r) = While r
 	  | set_e_attr a (If r) = If
