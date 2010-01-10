@@ -98,7 +98,7 @@ struct
 						body=ast_map_exp f body}
 	and ast_map_symtab f st =
 		let
-			val {venv,tenv} = !st
+			val {venv,tenv,iter_order} = !st
 
 			fun maybeUpdT x = x
 

@@ -130,6 +130,18 @@ struct
 		in
 			r0
 		end
+	  | constr_e (If {attr,cond,tbr,fbr}) =
+	  	let
+			val r0 = fresh_ty ()
+			val ct = constr_e cond
+			val tt = constr_e tbr
+			val ft = constr_e fbr
+			val _ = add_vconstr (r0,tt)
+			val _ = add_vconstr (r0,ft)
+			val _ = add_vconstr (ct,Types.tyBool)
+		in
+			r0
+		end
 	  | constr_e (Int _) = Types.tyInt
 	  | constr_e (String _) = Types.tyString
 	  | constr_e (Bool _) = Types.tyBool
@@ -193,27 +205,28 @@ struct
 
 	and constr symtab = 
 		let
-			val {venv=ve,tenv} = !symtab
+			val {venv=ve,tenv,iter_order} = !symtab
 
-			fun upd env NONE _ = 
-				raise Fail "[BUG] constr updates unknown symbol"
-			  | upd env (SOME s) (t,e) = 
+			fun upd env s (t,e) = 
 			  		Symtab.insert_v symtab s (t,e)
 
-			val vkeys = Symbol.keys (!ve)
+			val vkeys = List.map (fn x => (x, Symtab.lookup_v symtab x))
+							(!iter_order)
 		in
 			List.app (fn (s,(t,SOME e)) =>
-				if s = 
-					Symbol.hash (Symbol.fromString "__parent_scope") 
+				if s = (Symbol.fromString "__parent_scope") 
 				then () else
 				let
 					val r = fresh_ty ()
-					val _ = upd ve (Symbol.unhash s) (SOME r, SOME e)
+					val _ = upd ve s (SOME r, SOME e)
 					val t' = constr_e e
+					val _ = Symtab.print_scope symtab
 				in
 					(add_vconstr (r, t');
 					 venv := unify (!venv);
-					 venv := generalise (!venv))
+					 venv := generalise (!venv);
+					 print "\nConstraint Set:\n";
+					 print_constr (!venv))
 				end
 			  | (s,(t,NONE)) => ()) vkeys
 		end
@@ -244,7 +257,7 @@ struct
 
 	and substinenv tyX tyT symtab = 
 		let
-			val {venv,tenv} = !symtab
+			val {venv,tenv,iter_order} = !symtab
 
 			val vkeys = Symbol.keys (!venv)
 		
@@ -364,13 +377,14 @@ struct
 					PrettyPrint.ppty (PolyTy b) ^ "\n"))
      | unify ((VarTy (a,_), VarTy (b,_)) :: rest) =
         if a = b then unify rest else (raise (Fail ("Unsolvable: " ^ Symbol.toString a ^ " <> " ^ Symbol.toString b)))
-     | unify ((tyS,tyT)::rest) = raise (Fail ("Unsolvable: " ^ PrettyPrint.ppty tyS ^ " <> " ^ PrettyPrint.ppty tyT))
+     | unify ((tyS,tyT)::rest) = (Symtab.print_scope (Symtab.top_level); raise (Fail ("Unsolvable: " ^ PrettyPrint.ppty tyS ^ " <> " ^ PrettyPrint.ppty tyT)))
 
 	and generalise env =
 		let
 			fun collect_tyvars (UVar s) = [UVar s]
 			  | collect_tyvars (ArrowTy (t1,t2)) =
 			  		collect_tyvars t1 @ collect_tyvars t2
+			  | collect_tyvars (ListTy x) = collect_tyvars x
 			  | collect_tyvars x = []
 
 			val vars : ty list = List.foldl (fn ((l,r),a) => 

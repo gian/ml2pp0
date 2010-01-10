@@ -126,7 +126,8 @@ struct
     	           resultType : ty option,
         	       body : exp}
 			  and 'a symtab = {venv : 'a Symbol.table ref,
-				            tenv : 'a Symbol.table ref}
+				            tenv : 'a Symbol.table ref,
+							iter_order : Symbol.symbol list ref}
 
 
 	type symbol_data = ty option * exp option

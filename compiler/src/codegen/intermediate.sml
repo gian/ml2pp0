@@ -343,29 +343,31 @@ struct
 
 	fun translate symtab =
 		let
-			val {venv,tenv} = !symtab
+			val {venv,tenv,iter_order} = !symtab
 
-			val vkeys = Symbol.keys (!venv)
+			val vkeys = map (fn x => 
+							(x, Symtab.lookup_v symtab x)) (!iter_order)
 		in
 			List.foldl (fn ((s,(t,SOME e)),instr) =>
 				let
-					val _ = print ("Translating " ^ Symbol.toString (valOf (Symbol.unhash s)) ^ " = " ^ PrettyPrint.ppexp e ^ "\n")
+					val _ = print ("Translating " ^ Symbol.toString s ^ 
+								" = " ^ PrettyPrint.ppexp e ^ "\n")
 
 					val forwardSymbol = 
 						(case t of NONE => raise Fail ("Translate found unknown symbol")
 						         | (SOME (ArrowTy at)) => name(ArrowTy at)
 								 | (SOME t) => register t)
 									
-					val fsL = (case lookup (valOf (Symbol.unhash s)) of
+					val fsL = (case lookup s of
 						NONE => 
-						(insert (valOf (Symbol.unhash s)) forwardSymbol; 
+						(insert s forwardSymbol; 
 							forwardSymbol)
 					  | SOME t => t)
 
 					val (r,i) = trans_e e fsL
 
 				in
-					i @ instr
+					instr @ i
 				end
 				| (_,instr) => instr) [] vkeys
 		end

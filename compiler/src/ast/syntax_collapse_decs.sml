@@ -52,7 +52,7 @@ struct
 			val es = Symbol.fromString 
 				("_pm_rhs_" ^ Int.toString (!pm_rhs))
 			val _ = pm_rhs := !pm_rhs + 1
-			val _ = Symtab.insert_v symtab es (NONE,SOME e)
+			val _ = Symtab.insert_vi symtab es (NONE,SOME e)
 			val e' = Var {attr=[],name=es,symtab=symtab}
 		in
 			List.app (
@@ -60,7 +60,7 @@ struct
 				let
 					val st = ref (Symtab.symtab symtab)
 				in
-					Symtab.insert_v symtab term
+					Symtab.insert_vi symtab term
 					(NONE,SOME (App {attr=[],
 						  	exps=[
 								Fn {attr=[],
@@ -90,13 +90,13 @@ struct
 		(case p of 
 				VarPat {attr,name,symtab} =>
 					let
-						val _ = Symtab.insert_v scope name (NONE,e')
+						val _ = Symtab.insert_vi scope name (NONE,e')
 					 	val pat' = VarPat {attr=attr,name=name,symtab=scope}
 					in
 						pat'
 					end
 			  | OpPat {attr,symbol,symtab} =>
-			  		(Symtab.insert_v symtab symbol (NONE,e'); p)
+			  		(Symtab.insert_vi symtab symbol (NONE,e'); p)
 					(* FIXME *)
 			  | TuplePat l => (tup_ins scope p e'; p)
 			  | ListPat l => (tup_ins scope p e'; p)
@@ -104,7 +104,7 @@ struct
 			  | AsPat (l,r) => raise Fail "Not implemented AsPat"
 			  | ConstraintPat (p,t) => raise Fail "Not implemented cons"
 			  | WildPat => 
-			  		(Symtab.insert_v scope (mkUnique()) (NONE,e'); p)
+			  		(Symtab.insert_vi scope (mkUnique()) (NONE,e'); p)
 			  | p' => raise Fail ("Unimplemented in patToSt" ^ PrettyPrint.pppat p')
 			)
 
