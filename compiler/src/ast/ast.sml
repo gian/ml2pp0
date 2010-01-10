@@ -60,7 +60,7 @@ struct
 		  | String of string
 		  | Char of char
 		  | Bool of bool
-		  | BuiltIn of string
+		  | BuiltIn of string * ty
 		 and pat =
 			AsPat of pat * pat
 		  | ConstraintPat of pat * ty
@@ -89,6 +89,7 @@ struct
 		  | UnitTy
 		  | TyConTy of ty * ty list
 		  | StrTy of symbol list
+		  | ListTy of ty
 		  | UVar of int
 		  | PolyTy of int
 		 and attr =

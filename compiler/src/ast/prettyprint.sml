@@ -48,6 +48,7 @@ struct
 	  	"(" ^ String.concatWith ", " (map ppexp exps) ^ ")"
 	  | ppexp (List {attr,exps}) =
 	  	"[" ^ String.concatWith ", " (map ppexp exps) ^ "]"
+	  | ppexp (BuiltIn (s,ty)) = "<builtin function '" ^ s ^ "' : " ^ ppty ty ^ ">"
 	  | ppexp _ = "<unpretty-printed exp>"
 	and ppbinds [] = ""
 	  | ppbinds [h] = ppbind h
@@ -85,6 +86,7 @@ struct
 	  | ppty (TyConTy (t,[])) = ppty t
 	  | ppty (TyConTy (t,t')) = 
 	  	"(" ^ (String.concatWith "," (map ppty t')) ^ ") " ^ ppty t
+	  | ppty (ListTy t) = ppty t ^ " list"
 	  | ppty (UVar i) = "?X" ^ Int.toString i
 	  | ppty (PolyTy i) = "'" ^ String.str 
 	  							(Char.chr (Char.ord #"a" + i))

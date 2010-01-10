@@ -50,18 +50,14 @@ struct
 	  | opr_constr Cons = 
 	  	let
 			val r0 = fresh_ty ()
-			val r1 = TyConTy (r0, 
-								[VarTy (Symbol.fromString
-									"list", Symtab.top_level)])
+			val r1 = ListTy r0
 		in
 			(r0,r1,r1)
 		end
 	  | opr_constr Concat =
 		let
 			val r0 = fresh_ty ()
-			val r1 = TyConTy (r0, 
-								[VarTy (Symbol.fromString
-									"list", Symtab.top_level)])
+			val r1 = ListTy r0 
 		in
 			(r1,r1,r1)
 		end
@@ -86,11 +82,15 @@ struct
 				let
 					val r' = fresh_ty ()
 					val _ = Symtab.insert_v symtab name (SOME r',x)
+			val _ = print ("Var " ^ Symbol.toString name ^ " got type " ^ PrettyPrint.ppty r')
 				in
 					r'
 				end
 			  | (SOME t,_) => t) handle _ => (print "Var raised exn\n";
 			  									fresh_ty())
+
+
+			val _ = print ("Var " ^ Symbol.toString name ^ " has type " ^ PrettyPrint.ppty rt ^ "\n")
 
 		in
 			rt
@@ -136,6 +136,17 @@ struct
 	  | constr_e (Real _) = Types.tyReal
 	  | constr_e (Word _) = Types.tyWord
 	  | constr_e (Char _) = Types.tyChar
+	  | constr_e (List {attr,exps=[]}) = ListTy (fresh_ty ())
+	  | constr_e (List {attr,exps}) =
+	  	let
+			val le = constr_e (hd exps)
+			(* FIXME should add constraints for all list items *)
+			val lt = fresh_ty ()
+			val _ = add_vconstr (le,lt)
+		in
+			ListTy lt
+		end
+	  | constr_e (BuiltIn (s,ty)) = ty
 	  | constr_e (Let {attr,decs,exp,symtab}) = 
 	  	let
 	  		val _ = constr symtab
@@ -213,7 +224,8 @@ struct
 
         	fun f tyS = 
          	(case tyS of (ArrowTy(tyS1,tyS2)) => (ArrowTy(f tyS1,f tyS2))
-                    | (UVar n) => if n = x1 then tyT else (UVar n)
+				    | (UVar n) => if n = x1 then tyT else (UVar n)
+					| (ListTy l) => ListTy (f l)
 					| x => x)
      	in
         	f tyS
@@ -222,7 +234,8 @@ struct
 	  	let
 	 		fun f tyS = 
         	(case tyS of (ArrowTy(tyS1,tyS2)) => (ArrowTy(f tyS1,f tyS2))
-                    | (PolyTy n) => if n = x1 then tyT else (PolyTy n)
+                    | (ListTy l) => ListTy (f l)
+					| (PolyTy n) => if n = x1 then tyT else (PolyTy n)
 					| x => x)
 		in
         	f tyS
@@ -338,6 +351,8 @@ struct
         else (unify (substinconstr (UVar x) tyT rest)) @ [(UVar x,tyT)]
      | unify ((ArrowTy(tyS1,tyS2),ArrowTy(tyT1,tyT2)) :: rest) =
         unify ((tyS1,tyT1) :: (tyS2,tyT2) :: rest)
+	 | unify ((ListTy tyS1, ListTy tyS2) :: rest) =
+	 	unify ((tyS1,tyS2) :: rest)
 	 | unify ((PolyTy a, VarTy b) :: rest) = 
             (unify (substinconstr (PolyTy a) (VarTy b) rest)) @ 
 				[(PolyTy a,VarTy b)]
