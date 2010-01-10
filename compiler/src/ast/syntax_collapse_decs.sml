@@ -4,6 +4,8 @@ struct
 
 	open Ast
 
+	val uv = ref 8000
+	fun nextuv () = UVar (uv := !uv + 1; !uv)
 
 	(* The expression e must already have had collapse_exp
 	   applied to it.
@@ -70,7 +72,7 @@ struct
 											 symtab=st
 										})],
 									symtab=st,
-									ty = NONE
+									ty = SOME (nextuv()) 
 									},
 								e'
 						  	]
@@ -185,8 +187,8 @@ struct
 	  	let
 			val sc = ref (Symtab.symtab scope)
 			val m' = map (fn (pat,exp) => (
-			pat,collapse_exp sc exp)) m
-			val e' = Fn {attr=[],match=m',symtab=sc,ty=NONE}
+			patToSt sc pat NONE,collapse_exp sc exp)) m
+			val e' = Fn {attr=[],match=m',symtab=sc,ty=SOME (nextuv())}
 			val _ = patToSt scope p (SOME e')
 		in
 			()

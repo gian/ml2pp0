@@ -35,7 +35,7 @@ struct
 	  | ppexp (Selector {exp,...}) = "#" ^ ppexp exp
 	  | ppexp Unit = "()"
 	  | ppexp (Seq {exps,...}) = 
-	  		"(" ^ String.concatWith "; " (map ppexp exps) ^ ")"
+	  		"seq (" ^ String.concatWith "; " (map ppexp exps) ^ ")"
 	  | ppexp (Int i) = Int.toString i
 	  | ppexp (Word w) = Word32.toString w
 	  | ppexp (Real r) = Real.toString r
@@ -45,7 +45,7 @@ struct
 	  | ppexp (Let {decs,exp,...}) = 
 	  	"\nlet\n" ^ ppdecs decs ^ "in\n   " ^ ppexp exp ^ "\nend"
 	  | ppexp (Tuple {attr,exps}) = 
-	  	"(" ^ String.concatWith ", " (map ppexp exps) ^ ")"
+	  	"tuple (" ^ String.concatWith ", " (map ppexp exps) ^ ")"
 	  | ppexp (List {attr,exps}) =
 	  	"[" ^ String.concatWith ", " (map ppexp exps) ^ "]"
 	  | ppexp (BuiltIn (s,ty)) = "<builtin function '" ^ s ^ "' : " ^ ppty ty ^ ">"

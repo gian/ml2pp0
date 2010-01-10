@@ -12,7 +12,10 @@ struct
 	val tv = ref 0;
 	val pv = ref ~1;
 
-	fun add_vconstr (l,r) = venv := (l,r) :: (!venv)
+	fun add_vconstr (l,r) = (venv := (l,r) :: (!venv);
+		print ("add_vconstr: " ^ PrettyPrint.ppty l ^ " = " ^
+				PrettyPrint.ppty r ^ "\n"))
+
 	fun add_tconstr (l,r) = tenv := (l,r) :: (!tenv)
 
 	fun get_vconstr l = 
@@ -21,9 +24,6 @@ struct
 	fun get_tconstr l = 
 		List.find (fn (p,q) => constr_eq l p) (!tenv)
 
-	(* FIXME should use the local enclosing scope, not top_level
-		- no, we shouldn't.  All tyvars can be top-level, silly.
-	*)
 	fun fresh_ty () = UVar (tv := !tv + 1; !tv)
 	fun fresh_poly () = PolyTy (pv := !pv + 1; !pv)
 
@@ -82,7 +82,7 @@ struct
 				let
 					val r' = fresh_ty ()
 					val _ = Symtab.insert_v symtab name (SOME r',x)
-			val _ = print ("Var " ^ Symbol.toString name ^ " got type " ^ PrettyPrint.ppty r')
+			val _ = print ("Var " ^ Symbol.toString name ^ " got type " ^ PrettyPrint.ppty r' ^ "\n")
 				in
 					r'
 				end
@@ -95,29 +95,61 @@ struct
 		in
 			rt
 		end
+	  | constr_e (App {attr,exps=[tm1,tm2]}) =
+	  	let
+			fun inst tyS (PolyTy x) = 
+				(venv := substinconstr (PolyTy x) tyS (!venv); tyS)
+			  | inst tyS (ArrowTy (t1,t2)) = 
+			  	ArrowTy (inst tyS t1, inst tyS t2)
+			  | inst tyS (ListTy s) =
+			  	ListTy (inst tyS s)
+			  | inst tyS x = x
+
+			val t1' = constr_e tm1
+			val t1 = inst (fresh_ty()) t1'
+			val t2 = constr_e tm2
+			val tx = fresh_ty ()
+
+			val _ = add_vconstr (t1,ArrowTy(t2,tx))
+		in
+			t1
+		end
 	  | constr_e (App {attr,exps}) =
 	  	let
 			val exps' = List.rev (tl (List.rev exps))
 			val frst = hd (List.rev exps)
 			val init = constr_e frst
+
+			fun inst tyS (PolyTy x) = 
+				(venv := substinconstr (PolyTy x) tyS (!venv); tyS)
+			  | inst tyS (ArrowTy (t1,t2)) = 
+			  	ArrowTy (inst tyS t1, inst tyS t2)
+			  | inst tyS (ListTy s) =
+			  	ListTy (inst tyS s)
+			  | inst tyS x = x
 		in
 	  		List.foldr (fn (exp,r) =>
 				let
-					val r1 = constr_e exp
+					val r0 = constr_e exp
+					val r1 = inst (fresh_ty()) r0
 					val r2 = fresh_ty ()
-					val _ = add_vconstr (r1, ArrowTy (r, r2))
+					val _ = add_vconstr (r0, ArrowTy (r1, r2))
 				in
 					r2
 				end) init exps'
 		end
 	  | constr_e (Fn {attr,match,symtab,ty=SOME ty}) =
 	  	let
+			val _ = print ("**** Fn\n")
+
+			val _ = Symtab.print_scope symtab
+
 			val (p,e) = hd match
 			val r0 = fresh_ty ()
 			val r1 = constr_p p
 			val r2 = constr_e e
 			val _ = constr symtab
-			val _ = add_vconstr (ArrowTy (r1,r2), r0)
+			val _ = add_vconstr (r0,ArrowTy (r1,r2))
 			val _ = substinprog ty r0 
 			val _ = app (fn (p',e') => 
 							let
@@ -130,14 +162,18 @@ struct
 		in
 			r0
 		end
+	  | constr_e (Fn {attr,match,symtab,ty=NONE}) =
+	  	raise Fail "Fn without unique type"
 	  | constr_e (If {attr,cond,tbr,fbr}) =
 	  	let
+			val _ = print ("****: If\n")
 			val r0 = fresh_ty ()
 			val ct = constr_e cond
 			val tt = constr_e tbr
 			val ft = constr_e fbr
 			val _ = add_vconstr (r0,tt)
 			val _ = add_vconstr (r0,ft)
+			val _ = add_vconstr (tt,ft)
 			val _ = add_vconstr (ct,Types.tyBool)
 		in
 			r0
@@ -175,7 +211,7 @@ struct
 		in
 			ret
 		end
-	  | constr_e _ = fresh_ty ()
+	  | constr_e e = raise Fail ("Unhandled: " ^ PrettyPrint.ppexp e)
 
 	and constr_p (ConstraintPat (p,t)) =
 		let
@@ -219,16 +255,25 @@ struct
 				let
 					val r = fresh_ty ()
 					val _ = upd ve s (SOME r, SOME e)
+					val _ = print ("INSIDE LIST APP: " ^ PrettyPrint.ppexp e ^ "\n")
 					val t' = constr_e e
+
+					val _ = print ("INSIDE LIST APP TY: " ^ PrettyPrint.ppty t' ^ "\n")
+
 					val _ = Symtab.print_scope symtab
 				in
 					(add_vconstr (r, t');
-					 venv := unify (!venv);
-					 venv := generalise (!venv);
 					 print "\nConstraint Set:\n";
-					 print_constr (!venv))
+					 print_constr (!venv);
+					 venv := unify (!venv);
+					print "\nConstraint Set (Unify):\n";
+					 print_constr (!venv);
+					 venv := generalise (!venv);
+					 print "\nConstraint Set (Generalise):\n";
+					 print_constr (!venv)
+					 )
 				end
-			  | (s,(t,NONE)) => ()) vkeys
+			  | (s,(t,NONE)) => ()) (List.rev vkeys)
 		end
 
 
@@ -387,11 +432,28 @@ struct
 			  | collect_tyvars (ListTy x) = collect_tyvars x
 			  | collect_tyvars x = []
 
-			val vars : ty list = List.foldl (fn ((l,r),a) => 
-						collect_tyvars l @ collect_tyvars r @ a) [] env
+			fun unique [] = []
+			  | unique ((UVar h)::t) = 
+			  		(UVar h) :: (unique 
+							(List.filter (fn (UVar x) => 
+								x <> h) t))
 
+			val bound = List.foldl (fn ((l,r),a) =>
+						unique (collect_tyvars l) @ a) [] env
+
+
+			val _ = print ("BOUND: " ^ (String.concatWith ", " (map PrettyPrint.ppty bound)) ^ "\n")
+			val vars : ty list = unique (List.foldl (fn ((l,r),a) => 
+						 (collect_tyvars r) @ a) [] env)
+
+			val _ = print ("VARS: " ^ (String.concatWith ", " (map PrettyPrint.ppty vars)) ^ "\n")
+			val free = unique  (List.filter (fn (UVar x) => 
+								  not (List.exists 
+									(fn (UVar y) => x = y) bound)) vars)
+
+			val _ = print ("FREE: " ^ (String.concatWith ", " (map PrettyPrint.ppty free)) ^ "\n")
 			val env' = List.foldl (fn (a,e) => 
-						substinconstr_rhs a (fresh_poly ()) e) env vars
+						substinconstr_rhs a (fresh_poly ()) e) env free
 
 			val _ = pv := ~1
 		in

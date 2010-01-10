@@ -16,6 +16,10 @@ type match = A.match
 
 fun ensureNonqualified s = s
 
+val uv = ref 9000
+
+fun nextuv () = A.UVar (uv := !uv + 1; !uv)
+
   %%
   %term
       CHAR of char 
@@ -475,7 +479,8 @@ expnode : exp HANDLE match      (A.Handle {attr=[],exp=exp, match=match})
 								{attr=[],opr=A.BAnd,lhs=exp1,rhs=exp2})
         | exp COLON ty          (A.Constraint {attr=[],exp=exp,ty=ty})
         | app_exp               (A.App {attr=[],exps=app_exp})
-        | FN match              (A.Fn {attr=[],match=match,ty=NONE,
+        | FN match              (A.Fn {attr=[],match=match,
+								 ty=SOME (nextuv()),
 							  	 symtab=ref (T.empty ())})
         | CASE exp OF match     (A.Case {attr=[],exp=exp,match=match})
         | WHILE exp DO exp      (A.While {attr=[],test=exp1,exp = exp2})
