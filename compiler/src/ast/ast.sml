@@ -63,7 +63,7 @@ struct
 		  | FieldPat (* Fields, interleaved *)
 		 and bind =
 			ValBind of ast * ast 
-		  | ValRecBind of ast * ((ast * ast) list)
+		  | ValRecBind of ast * (ast list)
 		  | TypeBind of {def : ty, tycon : ty, tyvars : ty list}
 		  | DatatypeReplBind of ty * ty
 		  | DatatypeBind of 

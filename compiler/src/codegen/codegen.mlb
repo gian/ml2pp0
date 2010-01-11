@@ -1,2 +1,2 @@
 codegen/codegen.sml
-codegen/intermediate.sml
+(*codegen/intermediate.sml*)

@@ -46,9 +46,7 @@ struct
 												  ast_map_exp f e))
 	  | ast_map_bind f (ValRecBind (p,m)) = 
 	  	(#bindfun f) (ValRecBind (ast_map_exp f p,
-								  map (fn (p',e') => 
-								  	(ast_map_exp f p',
-								     ast_map_exp f e')) m))
+								  map (ast_map_exp f) m))
 	  | ast_map_bind f x = (#bindfun f) x
 	and ast_map_symtab f st =
 		let

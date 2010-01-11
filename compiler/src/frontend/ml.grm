@@ -12,13 +12,15 @@ structure T = Symtab
 
 type clause = A.clause
 
-type match = A.match
-
 fun ensureNonqualified s = s
 
 val uv = ref 9000
 
 fun nextuv () = A.UVar (uv := !uv + 1; !uv)
+
+fun mkNode (v,ch) = A.Node(v,NONE,T.top_level,ch)
+
+fun sym x = Symbol.fromString x
 
   %%
   %term
@@ -45,25 +47,25 @@ fun nextuv () = A.UVar (uv := !uv + 1; !uv)
     | PRIM
 
 %nonterm
-         aexp of A.exp
+         aexp of A.ast
        | andspecs of unit
-       | apat of A.pat
-       | apat' of A.pat
-       | apatnode of A.pat
-       | apats of A.pat list
-       | app_exp of A.exp list
-       | app_exp1 of A.exp list
+       | apat of A.ast
+       | apat' of A.ast
+       | apatnode of A.ast
+       | apats of A.ast list
+       | app_exp of A.ast list
+       | app_exp1 of A.ast list
        | clause of clause
        | clauses of clause list
        | clausesTop of clause list
-       | commapats of A.pat list
-       | con of A.exp
-       | const of A.exp
-       | const' of A.exp
-       | constr of A.exp * A.ty option
+       | commapats of A.ast list
+       | con of A.ast
+       | const of A.ast
+       | const' of A.ast
+       | constr of A.ast * A.ty option
        | constraint of A.ty option
-       | constrs of (A.exp * A.ty option) list
-       | constOrBool of A.exp
+       | constrs of (A.ast * A.ty option) list
+       | constOrBool of A.ast
        | datBind of A.bind list
        | datBindNoWithtype of A.bind list
        | datatypeRhs of A.bind list
@@ -83,19 +85,19 @@ fun nextuv () = A.UVar (uv := !uv + 1; !uv)
        | ebrhs of unit
        | ebrhsnode of unit
        | ebs of unit
-	   | elabel of (A.exp * A.exp)
-       | elabels of (A.exp * A.exp) list
-       | exndesc of A.exp * A.ty option
-       | exndescs of (A.exp * A.ty option) list
-       | exp of A.exp
-       | exp_2c of A.exp list
-       | exp_list of A.exp list
-       | exp_ps of A.exp list
-       | expnode of A.exp
+	   | elabel of A.ast
+       | elabels of A.ast list
+       | exndesc of A.ast * A.ty option
+       | exndescs of (A.ast * A.ty option) list
+       | exp of A.ast
+       | exp_2c of A.ast list
+       | exp_list of A.ast list
+       | exp_ps of A.ast list
+       | expnode of A.ast
        | expsAndTopdecs of A.dec list
        | fctarg of unit
        | fctid of unit
-       | field of A.exp
+       | field of A.ast
        | fixity of A.fixity
        | funbinds of unit
        | funbinds' of unit
@@ -116,20 +118,20 @@ fun nextuv () = A.UVar (uv := !uv + 1; !uv)
        | longvidands of A.symbol list
        | longvid of A.symbol
        | longvidNoEqual of A.symbol
-       | match of match 
-       | opaspat of A.pat option
-       | opcon of A.exp
-       | ot_list of A.exp list
-       | pat of A.pat
-       | pat_2c of A.pat list
-       | patitem of A.pat
-       | patitems of A.pat list * bool
-	   | patnode of A.pat
-       | pats of A.pat list
+       | match of A.ast list 
+       | opaspat of A.ast option
+       | opcon of A.ast
+       | ot_list of A.ast list
+       | pat of A.ast
+       | pat_2c of A.ast list
+       | patitem of A.ast
+       | patitems of A.ast list * bool
+	   | patnode of A.ast
+       | pats of A.ast list
        | program of A.program
        | repl of A.bind list
-       | rule of A.pat * A.exp
-       | rules of match
+       | rule of A.ast
+       | rules of A.ast list
        | rvalbind of A.bind list
        | rvalbindRest of A.bind list
 (*     | sdec of unit
@@ -169,8 +171,8 @@ fun nextuv () = A.UVar (uv := !uv + 1; !uv)
        | strid of Strid.t  *)
        | string of string
        | symattributes of unit 
-       | tlabel of (A.exp * A.ty)
-       | tlabels  of (A.exp * A.ty) list
+       | tlabel of (A.ast * A.ty)
+       | tlabels  of (A.ast * A.ty) list
        | topdec of A.dec
        | topdecnode of A.dec
        | topdecs of A.dec list
@@ -197,7 +199,7 @@ fun nextuv () = A.UVar (uv := !uv + 1; !uv)
        | valbindTop of A.bind list * A.bind list
        | valdesc of unit
        | valdescs of unit
-       | var of A.exp
+       | var of A.ast
        | vid of A.symbol
        | vidNoEqual of A.symbol
        | vids of A.symbol list
@@ -256,7 +258,7 @@ program: expsAndTopdecs (expsAndTopdecs)
 expsAndTopdecs: decs (decs)
 
 (*expsAndTopdecs:
-    exp SEMICOLON expsAndTopdecs ((A.ExpDec {attr=[],exp=exp}) :: expsAndTopdecs)
+    exp SEMICOLON expsAndTopdecs ((A.ExpDec {exp=exp}) :: expsAndTopdecs)
   | topdecs (topdecs)
 
 topdecs:
@@ -280,35 +282,25 @@ decs :                  ([])
 dec : decnode (decnode)
 
 decnode : decnolocal              (decnolocal) 
-        | LOCAL decs IN decs END  (A.LocalDec 
-									{attr=[],dec1=decs1,dec2=decs,
-									symtab=ref (T.empty ())})
+        | LOCAL decs IN decs END  (A.LocalDec)
 
 decnolocal
-        : VAL valbindTop          (A.ValDec {attr=[],
+        : VAL valbindTop          (A.ValDec {
 											tyvars = [],
                                             valBind = #1 valbindTop,
                                             recBind = #2 valbindTop})
-        | VAL tyvarseq valbindTop  (A.ValDec {attr=[],
+        | VAL tyvarseq valbindTop  (A.ValDec {
 											tyvars = [],
                                             valBind = #1 valbindTop,
                                             recBind = #2 valbindTop})
-        | FUN funs              (A.FunDec {attr=[],
-											tyvars=[],
-											clauses=funs})
-        | FUN tyvarseq funs     (A.FunDec {attr=[],
-											tyvars=tyvarseq,
-											clauses=funs})
-        | TYPE typBind          (A.TypeDec {attr=[],tyBind=typBind})
-        | DATATYPE datatypeRhs  (A.DatatypeDec 
-									{attr=[],tyBind=datatypeRhs})
-        | ABSTYPE datBind WITH decs END   (A.AbstypeDec {attr=[],
-														tyBind = datBind,
-                                                        body = decs})
+        | FUN funs              (A.FunDec ([],funs)) 
+        | FUN tyvarseq funs     (A.FunDec (tyvarseq,funs))
+        | TYPE typBind          (A.TypeDec typBind)
+        | DATATYPE datatypeRhs  (A.DatatypeDec datatypeRhs) 
+        | ABSTYPE datBind WITH decs END   (A.AbstypeDec) 
         | EXCEPTION ebs
-          (A.ExceptionDec {attr=[]})
-        | fixity vids           (A.FixDec {attr=[],fixity = fixity,
-                                          ops = vids, symtab = T.top_level})
+          (A.ExceptionDec)
+        | fixity vids           (A.FixDec (fixity,vids,T.top_level))
 
 valbindTop : valbind (valbind)
 
@@ -425,7 +417,7 @@ repl : tyvars tycon EQUALOP DATATYPE longtycon
        (if length tyvars = 0
            then ()
         else raise (Fail "nonempty tyvars in datatype repl")
-        ; [A.DatatypeReplBind {lhs = tycon, rhs = longtycon}])
+        ; [A.DatatypeReplBind (tycon, longtycon)])
 
 datBind
    : dbs withtypes	(dbs @ withtypes)
@@ -460,9 +452,9 @@ match : rules           (rules)
 rules : rule            ([rule])
       | rule BAR rules  (rule :: rules)
 
-rule    : pat DARROW exp        ((pat,exp))
+rule    : pat DARROW exp        (mkNode(A.Match, [pat,exp]))
 
-elabel  : field EQUALOP exp     (field,exp)
+elabel  : field EQUALOP exp     (mkNode (A.Match, [field,exp]))
 
 elabels : elabel COMMA elabels  (elabel :: elabels)
         | elabel                ([elabel])
@@ -472,46 +464,49 @@ exp_ps  : exp SEMICOLON exp     ([exp1, exp2])
 
 exp : expnode (expnode)
 
-expnode : exp HANDLE match      (A.Handle {attr=[],exp=exp, match=match})
-        | exp ORELSE exp        (A.BinOp
-								 {attr=[],opr=A.BOr,lhs=exp1,rhs=exp2})
-        | exp ANDALSO exp       (A.BinOp 
-								{attr=[],opr=A.BAnd,lhs=exp1,rhs=exp2})
-        | exp COLON ty          (A.Constraint {attr=[],exp=exp,ty=ty})
-        | app_exp               (A.App {attr=[],exps=app_exp})
-        | FN match              (A.Fn {attr=[],match=match,
-								 ty=SOME (nextuv()),
-							  	 symtab=ref (T.empty ())})
-        | CASE exp OF match     (A.Case {attr=[],exp=exp,match=match})
-        | WHILE exp DO exp      (A.While {attr=[],test=exp1,exp = exp2})
+expnode : exp HANDLE match      (mkNode(A.Handle,[exp] @ match))
+        | exp ORELSE exp        (mkNode(A.App,
+									[
+										mkNode(A.Var (sym "orelse"),[]),
+										mkNode(A.Tuple, [exp1, exp2])
+									]
+								))
+        | exp ANDALSO exp       (mkNode(A.App,
+									[
+										mkNode(A.Var (sym "orelse"),[]),
+										mkNode(A.Tuple, [exp1, exp2])
+									]
+								))
+        | exp COLON ty          (mkNode (A.Constraint ty, [exp]))
+        | app_exp               (mkNode (A.App, app_exp))
+        | FN match              (mkNode (A.Fn, match))
+        | CASE exp OF match     (mkNode (A.Case, exp :: match))
+        | WHILE exp DO exp      (mkNode (A.While, [exp1, exp2]))
         | IF exp THEN exp ELSE exp 
-						(A.If {attr=[],cond=exp1,tbr=exp2,fbr=exp3})
-        | RAISE exp             (A.Raise {attr=[],exp=exp})
+						(mkNode (A.If, [exp1,exp2,exp3]))
+        | RAISE exp             (mkNode (A.Raise, [exp]))
 
 app_exp : aexp app_exp1     (aexp :: app_exp1)
-        | longvid app_exp1  ((A.Var {attr=[],name = longvid,
-									symtab=T.top_level}) :: app_exp1)
+        | longvid app_exp1  (mkNode (A.Var longvid,[]) :: app_exp1)
 
 app_exp1 :         ([])
          | app_exp (app_exp)
 
-aexp    : OP longvid            (A.Op {attr=[],symbol = longvid, 
-										symtab = T.top_level})
+aexp    : OP longvid            (mkNode (A.Op longvid,[]))
         | const                 (const)
-        | HASH field            (A.Selector {attr=[],exp=field})
-        | LBRACE elabels RBRACE (A.Record {attr=[],fields=elabels})
-        | LBRACE RBRACE         (A.Unit)
-        | LPAREN RPAREN         (A.Unit)
+        | HASH field            (mkNode (A.Selector, [field]))
+        | LBRACE elabels RBRACE (mkNode (A.Record, elabels))
+        | LBRACE RBRACE         (mkNode (A.Unit,[]))
+        | LPAREN RPAREN         (mkNode (A.Unit,[]))
         | LPAREN expnode RPAREN (expnode)
-        | LPAREN exp_ps RPAREN  (A.Seq {attr=[],exps=exp_ps})
-        | LPAREN exp_2c RPAREN  (A.Tuple {attr=[],exps=exp_2c})
-        | LBRACKET exp_list RBRACKET  (A.List {attr=[],exps=exp_list})
-        | LBRACKET RBRACKET           (A.List {attr=[],exps=[]})
-        | LET decs IN exp END   (A.Let {attr=[],decs=decs,exp=exp,
-										symtab=ref (T.empty ())})
+        | LPAREN exp_ps RPAREN  (mkNode (A.Seq, exp_ps))
+        | LPAREN exp_2c RPAREN  (mkNode (A.Tuple, exp_2c))
+        | LBRACKET exp_list RBRACKET  (mkNode (A.List, exp_list))
+        | LBRACKET RBRACKET           (mkNode (A.List,[]))
+        | LET decs IN exp END   (mkNode (A.Let decs, [exp]))
         | LET decs IN exp_ps END
-            (A.Let {attr=[],decs=decs,exp=(A.Seq {attr=[],exps=exp_ps}),
-					 symtab=ref (T.empty ())})
+            (mkNode (A.Let decs,
+				[mkNode (A.Seq, exp_ps)]))
 
 exp_2c  : exp COMMA exp_2c      (exp :: exp_2c)
         | exp COMMA exp         ([exp1, exp2])
@@ -525,34 +520,31 @@ exp_list : exp                  ([exp])
 
 pat : patnode (patnode)
 
-patnode : pat AS pat    (A.AsPat (pat1, pat2))
-        | pat COLON ty  (A.ConstraintPat (pat, ty))
-        | apats         (A.AppPat apats)
+patnode : pat AS pat    (mkNode (A.AsPat, [pat1, pat2]))
+        | pat COLON ty  (mkNode (A.ConstraintPat ty, [pat]))
+        | apats         (mkNode (A.AppPat, apats))
 
 apats   : apat                  ([apat])
         | apat apats            (apat :: apats)
 
 apat : apatnode (apatnode)
 
-apatnode : longvidNoEqual        (A.VarPat {attr=[],name=longvidNoEqual,
-											symtab=T.top_level})
-        | OP longvid             (A.OpPat {attr=[],symbol= longvid,
-											symtab=T.top_level})
+apatnode : longvidNoEqual        (mkNode (A.VarPat longvidNoEqual, []))
+        | OP longvid             (mkNode (A.OpPat longvid, []))
         | const
           (case const of
-           A.Real _ => 
+           A.Node(A.Real _,_,_,_) => 
 		   	raise (Fail "real constants are not allowed in patterns")
-                | _ => A.ConstPat const)
-        | WILD                   (A.WildPat)
-        | LPAREN pats RPAREN     (A.TuplePat pats)
-        | LBRACKET pats RBRACKET (A.ListPat pats)
-        | LBRACE RBRACE          (A.UnitPat)
+                | _ => mkNode (A.ConstPat, [const]))
+        | WILD                   (mkNode (A.WildPat,[]))
+        | LPAREN pats RPAREN     (mkNode (A.TuplePat, pats))
+        | LBRACKET pats RBRACKET (mkNode (A.ListPat, pats))
+        | LBRACE RBRACE          (mkNode (A.UnitPat, []))
         | LBRACE patitems RBRACE
           (let
               val (items, flexible) = patitems
            in
-              A.RecordPat {flexible = flexible,
-                          pats = items}
+              mkNode (A.RecordPat flexible,items)
            end)
 
 pats: ([])
@@ -568,16 +560,16 @@ patitems : patitem COMMA patitems  (let val (items, f) = patitems
          | DOTDOTDOT            ([], true)
 
 patitem
-   : field EQUALOP pat (A.FieldPat (field, pat))
+   : field EQUALOP pat (mkNode (A.FieldPat, [field, pat]))
    | vidNoEqual constraint opaspat
      (let
-		val p = A.VarPat {attr=[],name=vidNoEqual,symtab=T.top_level}
+		val p = mkNode (A.VarPat vidNoEqual, []) 
 		val p' = (case constraint of
 					NONE => p
-				  | SOME x => A.ConstraintPat (p,x))
+				  | SOME x => mkNode (A.ConstraintPat x, [p]))
 		val p'' = (case opaspat of
 				    NONE => p'
-				  | SOME x => A.AsPat (p',x))
+				  | SOME x => mkNode (A.AsPat, [p',x]))
 	 in
 	 	p''
 	 end)
@@ -623,17 +615,18 @@ ty0_pc  : ty COMMA ty           ([ty1, ty2])
 constOrBool
    : const (const)
    | id (case Symbol.toString id of
-         	"false" => A.Bool false
-          | "true" => A.Bool true
+         	"false" => mkNode (A.Bool false,[])
+          | "true" => mkNode (A.Bool true, [])
           | s => raise Fail "Invalid bool constant")
 
 const   : const'                (const')
 
-const'  : int                   (A.Int int)
-        | word                  (A.Word (Word32.fromInt word))
-        | REAL                  (A.Real (valOf (Real.fromString REAL)))
-        | STRING                (A.String STRING)
-        | CHAR                  (A.Char CHAR)
+const'  : int                   (mkNode (A.Int int,[]))
+        | word                  (mkNode (A.Word (Word32.fromInt word),[]))
+        | REAL                  (mkNode (A.Real 
+									(valOf (Real.fromString REAL)), []))
+        | STRING                (mkNode (A.String STRING, []))
+        | CHAR                  (mkNode (A.Char CHAR, []))
 
 string : STRING  (STRING)
 
@@ -659,17 +652,17 @@ vid : idEqual                  (idEqual)
 vidNoEqual : id                (id)
 vids : vid                     ([vid])
      | vid vids                (vid::vids)
-con : id                       (A.Var {attr=[],name=id,symtab=T.top_level})
-tycon : idNoAsterisk           (A.VarTy (idNoAsterisk,T.top_level))
-tyvar : TYVAR                  (A.VarTy (S.fromString TYVAR,T.top_level))
-field : id                     (A.Var {attr=[],name=id,symtab=T.top_level})
-      | int                    (A.Int
+con : id                       (mkNode (A.Var id,[]))
+tycon : idNoAsterisk           (A.VarTy idNoAsterisk)
+tyvar : TYVAR                  (A.VarTy (S.fromString TYVAR))
+field : id                     (mkNode (A.Var id,[]))
+      | int                    (mkNode (A.Int
                                  (if int <= 0
                                    then raise Fail "nonpositive field"
                                     else
-                                       int - 1))
+                                       int - 1), []))
 
-longtycon : longidNoAsterisk 	(A.VarTy (longidNoAsterisk,T.top_level)) 
+longtycon : longidNoAsterisk 	(A.VarTy longidNoAsterisk) 
 longvid : longidEqual      		(longidEqual) 
 longvidNoEqual : longid    		(longid) 
 longcon : longid           		(longid) 

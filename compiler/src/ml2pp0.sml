@@ -2,8 +2,8 @@ structure Lml =
 struct
  fun initialise () =
   	let
-		val _ = Optimiser.addPass ("nullOpt", fn x => ())
-		val _ = Optimiser.addPass ("constFold", ConstFold.optConstFold) 
+	(*	val _ = Optimiser.addPass ("nullOpt", fn x => ())
+		val _ = Optimiser.addPass ("constFold", ConstFold.optConstFold) *)
 	in
 		()
 	end
@@ -39,7 +39,7 @@ struct
 		val _ = print "SCOPE DUMP CONSTRAINED:\n"
 		val _ = Symtab.print_scope (Symtab.top_level)
 
-		val _ = Optimiser.runAllPasses Symtab.top_level
+(*		val _ = Optimiser.runAllPasses Symtab.top_level 
 		val _ = print "SCOPE DUMP (post-Optimiser):\n"
 		val _ = Symtab.print_scope (Symtab.top_level)
 		val l = Intermediate.translate Symtab.top_level
@@ -50,7 +50,7 @@ struct
 		val outfile = smlfile ^ ".ll"
 		val fp = TextIO.openOut outfile
 		val _ = TextIO.output (fp, code)
-		val _ = TextIO.closeOut fp
+		val _ = TextIO.closeOut fp*)
 	in
 		()
 	end

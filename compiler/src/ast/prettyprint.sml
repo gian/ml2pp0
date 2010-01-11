@@ -62,7 +62,7 @@ struct
 	  | ppbinds (h::t) = ppbind h ^ " \nand " ^ ppbinds t
 	and ppbind (ValBind (p,e)) = ppexp p ^ " = " ^ ppexp e
 	  | ppbind (ValRecBind (p,b)) = "rec " ^ ppexp p ^ " = fn " ^ 
-	  		(String.concatWith "\n\t| " (map (fn (pt,ex) => ppexp pt ^ " => " ^ ppexp ex) b))
+	  		(String.concatWith "\n\t| " (map ppexp b))
 	  | ppbind (TypeBind {def,tycon,tyvars}) = 
 	  	let
 			val tv = if length tyvars = 0 then "" else 

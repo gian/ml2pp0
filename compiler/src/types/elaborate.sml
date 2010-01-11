@@ -37,208 +37,6 @@ struct
 			print_constr t
 		end
 
-	(* TODO These should probably go away *)
-	fun opr_constr BOr = (Types.tyBool,Types.tyBool,Types.tyBool)
-	  | opr_constr BAnd = (Types.tyBool,Types.tyBool,Types.tyBool)
-	  | opr_constr Plus = (Types.tyInt,Types.tyInt,Types.tyInt)
-	  | opr_constr Minus = (Types.tyInt,Types.tyInt,Types.tyInt)
-	  | opr_constr Times = (Types.tyInt,Types.tyInt,Types.tyInt)
-	  | opr_constr Div = (Types.tyInt,Types.tyInt,Types.tyInt)
-	  | opr_constr RDiv = (Types.tyReal,Types.tyReal,Types.tyReal)
-	  | opr_constr StrConcat = 
-	  	(Types.tyString,Types.tyString,Types.tyString)
-	  | opr_constr Cons = 
-	  	let
-			val r0 = fresh_ty ()
-			val r1 = ListTy r0
-		in
-			(r0,r1,r1)
-		end
-	  | opr_constr Concat =
-		let
-			val r0 = fresh_ty ()
-			val r1 = ListTy r0 
-		in
-			(r1,r1,r1)
-		end
-	  | opr_constr Mod = (Types.tyInt, Types.tyInt, Types.tyInt) 
-	  | opr_constr Equal = (fresh_ty (), fresh_ty (), Types.tyBool) 
-	  | opr_constr NEqual = (fresh_ty (), fresh_ty (), Types.tyBool) 
-	  | opr_constr GT = (Types.tyInt, Types.tyInt, Types.tyBool) 
-	  | opr_constr LT = (Types.tyInt, Types.tyInt, Types.tyBool) 
-	  | opr_constr LTEqual = (Types.tyInt, Types.tyInt, Types.tyBool) 
-	  | opr_constr GTEqual = (Types.tyInt, Types.tyInt, Types.tyBool) 
-	  | opr_constr _ = (fresh_ty (), fresh_ty (), fresh_ty ())
-
-	fun constr_binop (lc,rc,gc) l r ret =
-		(add_vconstr (l, lc);
-		 add_vconstr (r, rc);
-		 add_vconstr (ret, gc))
-
-	fun constr_e (Var {attr,name,symtab}) =
-		let
-			val rt = (case Symtab.lookup_v symtab name of
-				(NONE,x) => 
-				let
-					val r' = fresh_ty ()
-					val _ = Symtab.insert_v symtab name (SOME r',x)
-			val _ = print ("Var " ^ Symbol.toString name ^ " got type " ^ PrettyPrint.ppty r' ^ "\n")
-				in
-					r'
-				end
-			  | (SOME t,_) => t) handle _ => (print "Var raised exn\n";
-			  									fresh_ty())
-
-
-			val _ = print ("Var " ^ Symbol.toString name ^ " has type " ^ PrettyPrint.ppty rt ^ "\n")
-
-		in
-			rt
-		end
-	  | constr_e (App {attr,exps=[tm1,tm2]}) =
-	  	let
-			fun inst tyS (PolyTy x) = 
-				(venv := substinconstr (PolyTy x) tyS (!venv); tyS)
-			  | inst tyS (ArrowTy (t1,t2)) = 
-			  	ArrowTy (inst tyS t1, inst tyS t2)
-			  | inst tyS (ListTy s) =
-			  	ListTy (inst tyS s)
-			  | inst tyS x = x
-
-			val t1' = constr_e tm1
-			val t1 = inst (fresh_ty()) t1'
-			val t2 = constr_e tm2
-			val tx = fresh_ty ()
-
-			val _ = add_vconstr (t1,ArrowTy(t2,tx))
-		in
-			t1
-		end
-	  | constr_e (App {attr,exps}) =
-	  	let
-			val exps' = List.rev (tl (List.rev exps))
-			val frst = hd (List.rev exps)
-			val init = constr_e frst
-
-			fun inst tyS (PolyTy x) = 
-				(venv := substinconstr (PolyTy x) tyS (!venv); tyS)
-			  | inst tyS (ArrowTy (t1,t2)) = 
-			  	ArrowTy (inst tyS t1, inst tyS t2)
-			  | inst tyS (ListTy s) =
-			  	ListTy (inst tyS s)
-			  | inst tyS x = x
-		in
-	  		List.foldr (fn (exp,r) =>
-				let
-					val r0 = constr_e exp
-					val r1 = inst (fresh_ty()) r0
-					val r2 = fresh_ty ()
-					val _ = add_vconstr (r0, ArrowTy (r1, r2))
-				in
-					r2
-				end) init exps'
-		end
-	  | constr_e (Fn {attr,match,symtab,ty=SOME ty}) =
-	  	let
-			val _ = print ("**** Fn\n")
-
-			val _ = Symtab.print_scope symtab
-
-			val (p,e) = hd match
-			val r0 = fresh_ty ()
-			val r1 = constr_p p
-			val r2 = constr_e e
-			val _ = constr symtab
-			val _ = add_vconstr (r0,ArrowTy (r1,r2))
-			val _ = substinprog ty r0 
-			val _ = app (fn (p',e') => 
-							let
-								val r3 = constr_p p'
-								val r4 = constr_e e'
-							in
-								(add_vconstr (r3, r1);
-								 add_vconstr (r4, r2))
-							end) (tl match)
-		in
-			r0
-		end
-	  | constr_e (Fn {attr,match,symtab,ty=NONE}) =
-	  	raise Fail "Fn without unique type"
-	  | constr_e (If {attr,cond,tbr,fbr}) =
-	  	let
-			val _ = print ("****: If\n")
-			val r0 = fresh_ty ()
-			val ct = constr_e cond
-			val tt = constr_e tbr
-			val ft = constr_e fbr
-			val _ = add_vconstr (r0,tt)
-			val _ = add_vconstr (r0,ft)
-			val _ = add_vconstr (tt,ft)
-			val _ = add_vconstr (ct,Types.tyBool)
-		in
-			r0
-		end
-	  | constr_e (Int _) = Types.tyInt
-	  | constr_e (String _) = Types.tyString
-	  | constr_e (Bool _) = Types.tyBool
-	  | constr_e (Real _) = Types.tyReal
-	  | constr_e (Word _) = Types.tyWord
-	  | constr_e (Char _) = Types.tyChar
-	  | constr_e (List {attr,exps=[]}) = ListTy (fresh_ty ())
-	  | constr_e (List {attr,exps}) =
-	  	let
-			val le = constr_e (hd exps)
-			(* FIXME should add constraints for all list items *)
-			val lt = fresh_ty ()
-			val _ = add_vconstr (le,lt)
-		in
-			ListTy lt
-		end
-	  | constr_e (BuiltIn (s,ty)) = ty
-	  | constr_e (Let {attr,decs,exp,symtab}) = 
-	  	let
-	  		val _ = constr symtab
-	   	in
-			constr_e exp
-		end
-	  | constr_e (BinOp {attr,opr,lhs,rhs}) = 
-	  	let
-			val rl = constr_e lhs
-			val rr = constr_e rhs
-			val ret = fresh_ty ()
-			val cs = opr_constr opr
-			val _ = constr_binop cs rl rr ret
-		in
-			ret
-		end
-	  | constr_e e = raise Fail ("Unhandled: " ^ PrettyPrint.ppexp e)
-
-	and constr_p (ConstraintPat (p,t)) =
-		let
-			val r = constr_p p
-			val _ = add_vconstr (r, t)
-		in
-			r
-		end
-	  | constr_p (VarPat {name,symtab,...}) =
-	  	let
-			val r = fresh_ty ()
-			
-			val (_,e) = Symtab.lookup_v symtab name
-			val _ = Symtab.insert_v symtab name (SOME r, e)
-		in
-			r
-		end
-	  | constr_p (TuplePat l) =
-	  		TupleTy (map constr_p l)
-	  | constr_p (ConstPat e) = constr_e e
-	  | constr_p x = raise (Fail ("Unhandled pattern: " ^ PrettyPrint.pppat x))
-	and constr' (ValDec v) =
-		(case (hd (#valBind v)) of
-			(ValBind (Wild,e)) => constr_e e
-		  | _ => raise Fail "unknown valdec bind\n")
-	  | constr' _ = fresh_ty ()
-
 	and constr symtab = 
 		let
 			val {venv=ve,tenv,iter_order} = !symtab
@@ -256,13 +54,13 @@ struct
 					val r = fresh_ty ()
 					val _ = upd ve s (SOME r, SOME e)
 					val _ = print ("INSIDE LIST APP: " ^ PrettyPrint.ppexp e ^ "\n")
-					val t' = constr_e e
+					(* val t' = constr_e e *)
 
-					val _ = print ("INSIDE LIST APP TY: " ^ PrettyPrint.ppty t' ^ "\n")
+				(*	val _ = print ("INSIDE LIST APP TY: " ^ PrettyPrint.ppty t' ^ "\n")*)
 
 					val _ = Symtab.print_scope symtab
 				in
-					(add_vconstr (r, t');
+					((*add_vconstr (r, t');*)
 					 print "\nConstraint Set:\n";
 					 print_constr (!venv);
 					 venv := unify (!venv);
@@ -321,16 +119,17 @@ struct
 	and	substinprog (PolyTy tyX) tyT = Symtab.top_level 
 	  |	substinprog tyX tyT =
 		let
-			fun ef (f as Fn {symtab,attr,match,ty=SOME ty}) = 
+			fun ef (Node(Fn,SOME ty,symtab,ch)) = 
 				(substinenv tyX tyT symtab; 
-				 Fn {symtab=symtab,
-				 	 attr=attr,
-				     match=match,
-					 ty=SOME (substinty tyX tyT ty)})
-			  | ef (f as Fn {ty=NONE,...}) = f
-			  | ef (f as Let {symtab,...}) =
+				 Node(Fn,
+				 	  SOME (substinty tyX tyT ty),
+					  symtab,
+					  ch))
+			  | ef (f as Node(Let _,t, symtab,ch)) =
 			  	(substinenv tyX tyT symtab; f)
-			  | ef f = f
+			  | ef (Node(c,SOME ty,symtab,ch)) =
+			  	Node(c,SOME (substinty tyX tyT ty), symtab, ch)
+			  | ef x = x
 
 			fun id x = x
 
@@ -345,7 +144,6 @@ struct
 			ast_map_symtab {
 				decfun = id,
 				expfun = ef,
-				patfun = id,
 				bindfun = id,
 				tyfun = id,
 				oprfun = id,
@@ -420,7 +218,7 @@ struct
 				("Unsolvable polymorphic unification! " ^ 
 					PrettyPrint.ppty (PolyTy a) ^ " <> " ^ 
 					PrettyPrint.ppty (PolyTy b) ^ "\n"))
-     | unify ((VarTy (a,_), VarTy (b,_)) :: rest) =
+     | unify ((VarTy a, VarTy b) :: rest) =
         if a = b then unify rest else (raise (Fail ("Unsolvable: " ^ Symbol.toString a ^ " <> " ^ Symbol.toString b)))
      | unify ((tyS,tyT)::rest) = (Symtab.print_scope (Symtab.top_level); raise (Fail ("Unsolvable: " ^ PrettyPrint.ppty tyS ^ " <> " ^ PrettyPrint.ppty tyT)))
 
