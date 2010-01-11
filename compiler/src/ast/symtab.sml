@@ -29,7 +29,7 @@ end
 structure Symtab : SYMTAB =
 struct
 
-	type symbol_data = (Ast.ty option) * (Ast.exp option)
+	type symbol_data = (Ast.ty option) * (Ast.ast option)
 
 	type 'a symtab = {venv : 'a Symbol.table ref,
 				      tenv : 'a Symbol.table ref,
@@ -43,10 +43,11 @@ struct
 			val e = Symbol.enter (Symbol.empty,
 						Symbol.symbol "__parent_scope",
 						(NONE, 
-						 SOME (Ast.Var 
-						 	{attr=[],
-						 	 name=Symbol.symbol "__parent_scope",
-							 symtab=parent})))
+						 SOME (Ast.Node (Ast.Var (Symbol.symbol "__parent_scope"),
+												  NONE,
+												  parent,
+												  [])
+									  )))
 		in
 			{venv = ref e, 
 	    	 tenv = ref Symbol.empty,
@@ -106,7 +107,7 @@ struct
 			let val {venv,tenv,iter_order} = !scope in
 			(case Symbol.look (!venv, 
 							   Symbol.symbol "__parent_scope")
-				of SOME (_, SOME (Ast.Var v)) => #symtab v
+				of SOME (_, SOME (Ast.Node (_,_,st,_))) => st 
 				 | NONE => raise NoParent
 				 | _ => raise Fail "invalid __parent_scope")
 			end
@@ -118,10 +119,11 @@ struct
 								Symbol.symbol "__parent_scope",
 									(NONE,
 									 SOME (
-									 Ast.Var {attr=[],
-											  name=Symbol.symbol
-											  	"__parent_scope",
-											  symtab=par})))
+									 	Ast.Node (Ast.Var (Symbol.symbol "__parent_scope"),
+												  NONE,
+												  par,
+												  [])
+									  )))
 		in
 			scope
 		end
@@ -148,7 +150,7 @@ struct
 			  | prt (SOME (x : Ast.ty)) = "\t\tType: " ^ PrettyPrint.ppty x ^ "\n"
 
 			fun pra NONE = "\t\t AST: NONE\n"
-			  | pra (SOME (x : Ast.exp)) = "\t\t AST: " ^ PrettyPrint.ppexp x ^ "\n"
+			  | pra (SOME (x : Ast.ast)) = "\t\t AST: " ^ PrettyPrint.ppexp x ^ "\n"
 
 			fun pr NONE _ = print "\tunrecognised symbol\n"
 			  | pr (SOME s) (t,a) = 

@@ -9,51 +9,39 @@ struct
 		  | Nonfix
 
 	datatype dec = 
-			ExpDec of {attr : attr list, exp : exp}
+			ExpDec of ast 
 		  | NullDec
-		  | LocalDec of {attr: attr list,dec1: dec list,dec2 :dec list, symtab : (ty option * exp option) symtab ref}
-		  | ValDec of 
-		  	{attr:attr list,
-			 tyvars: ty list,
-			 valBind : bind list,
-			 recBind : bind list}
-		  | FunDec of
-		  	{attr:attr list,
-			 tyvars : ty list,
-			 clauses : clause list list}
-		  | TypeDec of
-		  	{attr:attr list,
-			 tyBind : bind list}
-		  | DatatypeDec of
-		    {attr:attr list,
-			 tyBind : bind list}
-		  | AbstypeDec of
-		    {attr:attr list,
-			 tyBind : bind list,
-			 body : dec list}
-	      | ExceptionDec of {attr : attr list}
-		  | OpenDec of {attr : attr list} 
-		  | FixDec of {attr : attr list, fixity: fixity,ops:symbol list, symtab : (ty option * exp option) symtab ref}
-	     and exp =
-			Handle of 
-				{attr : attr list, exp : exp, match : (pat * exp) list}
-		  | App of {attr : attr list, exps : exp list}
-		  | BinOp of {attr : attr list, opr : opr, lhs: exp, rhs: exp}
-		  | Constraint of {attr : attr list, exp : exp, ty : ty}
-		  | Fn of {attr : attr list, match : (pat * exp) list, ty : ty option, symtab : (ty option * exp option) symtab ref}
-		  | Case of {attr: attr list, exp: exp, match: (pat * exp) list}
-		  | While of {attr: attr list, test : exp, exp : exp}
-		  | If of {attr:attr list, cond: exp, tbr: exp, fbr: exp}
-		  | Raise of {attr:attr list, exp : exp}
-		  | Op of {attr: attr list, symbol : symbol, symtab : (ty option * exp option) symtab ref}
-		  | Var of {attr: attr list, name : symbol, symtab : (ty option * exp option) symtab ref}
-		  | Selector of {attr: attr list, exp : exp}
-		  | Record of {attr: attr list, fields : (exp * exp) list}
+		  | LocalDec 
+		  | ValDec of {tyvars: ty list,valBind : bind list,recBind : bind list}
+		  | FunDec of ty list * (clause list list)
+		  | TypeDec of bind list
+		  | KindDec of bind list
+		  | DatatypeDec of bind list
+		  | AbstypeDec
+	      | ExceptionDec 
+		  | OpenDec 
+		  | FixDec of fixity * symbol list * (ty option * ast option) symtab ref
+		 and ast = Node of ast_node * ty option * ((ty option * ast option) symtab ref) * ast list 
+	     and ast_node =
+			Handle	(* [ exp, matches ] *)
+		  | Match (* [pat,exp] *) 
+		  | App (* [tm1, tm2] *)
+		  | Constraint of ty (* [exp] *)
+		  | Fn (* [matches] *)
+		  | Case (* [exp, matches] *)
+		  | While (* [cond, exp] *)
+		  | If (* cond, tbr, fbr *)
+		  | Raise (* [exp] *)
+		  | Op of symbol
+		  | Var of symbol
+		  | Selector (* exp *)
+		  | Record (* interleaved [t1,t2,t3,t4] = {t1=t2,t3=t4} *)
 		  | Unit
-		  | Seq of {attr: attr list, exps : exp list}
-		  | Tuple of {attr: attr list, exps : exp list}
-		  | List of {attr: attr list, exps : exp list}
-		  | Let of {attr: attr list, decs : dec list, exp : exp, symtab : (ty option * exp option) symtab ref}
+		  | Seq (* [exp] *)
+		  | Tuple (* exps *)
+		  | Vector (* exps *)
+		  | List (* exps *)
+		  | Let of dec list (* [exp] *)
 		  | Int of int
 		  | Word of word
 		  | Real of real
@@ -61,44 +49,43 @@ struct
 		  | Char of char
 		  | Bool of bool
 		  | BuiltIn of string * ty
-		 and pat =
-			AsPat of pat * pat
-		  | ConstraintPat of pat * ty
-		  | AppPat of pat list
-		  | VarPat of {attr: attr list, name : symbol, symtab : (ty option * exp option) symtab ref}
-		  | OpPat of {attr: attr list, symbol : symbol, symtab : (ty option * exp option) symtab ref}
-		  | ConstPat of exp
+		  | AsPat (* exp, exp *)
+		  | ConstraintPat of ty (* exp *) 
+		  | AppPat (* exps *)
+		  | VarPat of symbol 
+		  | OpPat of symbol
+		  | ConstPat (* exp *)
 		  | WildPat
-		  | TuplePat of pat list
-		  | ListPat of pat list
+		  | TuplePat (* exps *)
+		  | ListPat (* exps *)
 		  | UnitPat
-		  | RecordPat of {flexible : bool, pats : pat list}
-		  | FieldPat of exp * pat
+		  | RecordPat of bool (* flexible, [pats] *)
+		  | FieldPat (* Fields, interleaved *)
 		 and bind =
-			ValBind of pat * exp
-		  | ValRecBind of pat * ((pat * exp) list)
+			ValBind of ast * ast 
+		  | ValRecBind of ast * ((ast * ast) list)
 		  | TypeBind of {def : ty, tycon : ty, tyvars : ty list}
-		  | DatatypeReplBind of {lhs : ty, rhs : ty}
+		  | DatatypeReplBind of ty * ty
 		  | DatatypeBind of 
-		     {cons: (exp * ty option) list, tycon: ty, tyvars: ty list}
+		     {cons: (ast * ty option) list, tycon: ty, tyvars: ty list}
 		 and ty =
 			TupleTy of ty list
 		  | ArrowTy of ty * ty
-		  | VarTy of symbol * ((ty option * exp option) symtab ref)
-		  | RecordTy of (exp * ty) list
+		  | VarTy of symbol 
+		  | RecordTy of (ast * ty) list
 		  | UnitTy
 		  | TyConTy of ty * ty list
 		  | StrTy of symbol list
 		  | ListTy of ty
+		  | IntTy
+		  | StringTy
+		  | BoolTy
+		  | RealTy
+		  | CharTy
+		  | WordTy
+		  | VectorTy of ty * ast
 		  | UVar of int
 		  | PolyTy of int
-		 and attr =
-		 	Left of int
-		  | Right of int
-		  | Type of ty
-		  | Commutative
-		  | Associative
-		  | Info of string
 		 and opr =
 		 	BOr
 		  | BAnd
@@ -122,17 +109,15 @@ struct
 		  | Compose
 		  | Before
 
-		 withtype clause = {pats : pat list,
+		 withtype clause = {pats : ast list,
     	           resultType : ty option,
-        	       body : exp}
+        	       body : ast}
 			  and 'a symtab = {venv : 'a Symbol.table ref,
 				            tenv : 'a Symbol.table ref,
 							iter_order : Symbol.symbol list ref}
 
 
-	type symbol_data = ty option * exp option
-
-	type match = (pat * exp) list
+	type symbol_data = ty option * ast option
 
 	type program = dec list
 end

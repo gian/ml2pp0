@@ -6,16 +6,13 @@ struct
 
 	type syntax_pass_param = unit
 
-	fun single_app (A.App {attr,exps=[e]}) = e
+	fun single_app (A.Node(A.App,_,_,[e])) = e
+	  | single_app (A.Node(A.AppPat,_,_,[p])) = p
 	  | single_app k = k
 
-	fun single_papp (A.AppPat [p]) = p
-	  | single_papp k = k
-	
 	fun translate _ prog =
 		AstOps.ast_map {decfun=id,
 						expfun=single_app,
-						patfun=single_papp,
 						bindfun=id,
 						tyfun=id,
 						oprfun=id,
