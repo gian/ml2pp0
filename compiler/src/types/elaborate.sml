@@ -46,6 +46,8 @@ struct
 
 			val vkeys = List.map (fn x => (x, Symtab.lookup_v symtab x))
 							(!iter_order)
+
+			val _ = Symtab.print_scope symtab
 		in
 			List.app (fn (s,(t,SOME e)) =>
 				if s = (Symbol.fromString "__parent_scope") 

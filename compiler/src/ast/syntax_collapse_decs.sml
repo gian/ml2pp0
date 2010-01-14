@@ -116,8 +116,11 @@ struct
 				end
 			  | cb (ValRecBind (p as Node(x,_,scope,_),m)) = 
 				let
-				(*	val _ = patToSt scope x (SOME e') *)
-				(* FIXME *)
+					val st = ref (Symtab.symtab scope)
+
+					val e' = Node(Fn,NONE,st,m)
+
+					val _ = patToSt scope x (SOME e') 
 				in
 					ValRecBind(p,m)
 				end
