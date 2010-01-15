@@ -37,7 +37,7 @@ struct
 		  | Selector (* exp *)
 		  | Record (* interleaved [t1,t2,t3,t4] = {t1=t2,t3=t4} *)
 		  | Unit
-		  | Seq (* [exp] *)
+		  | Seq (* [exps] *)
 		  | Tuple (* exps *)
 		  | Vector (* exps *)
 		  | List (* exps *)

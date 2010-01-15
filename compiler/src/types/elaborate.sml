@@ -9,7 +9,7 @@ struct
 
 	val tenv = ref [] : constraint_set ref
 	val venv = ref [] : constraint_set ref
-	val tv = ref 0;
+	val tv = ref 50;
 	val pv = ref ~1;
 
 	fun add_vconstr (l,r) = (venv := (l,r) :: (!venv);
@@ -27,6 +27,12 @@ struct
 	fun fresh_ty () = UVar (tv := !tv + 1; !tv)
 	fun fresh_poly () = PolyTy (pv := !pv + 1; !pv)
 
+	fun get_match_lhs (Node (Match, _, _, [p,e])) = p
+	  | get_match_lhs _ = raise Fail "get_match_lhs called on non-match"
+
+	fun get_match_rhs (Node (Match, _, _, [p,e])) = e
+	  | get_match_rhs _ = raise Fail "get_match_rhs called on non-match"
+
 	fun print_constr [] = ()
 	  | print_constr ((l,r)::t) = 
 	  	let
@@ -36,6 +42,155 @@ struct
 		in
 			print_constr t
 		end
+
+	and inst tyS (PolyTy x) = 
+		(venv := substinconstr (PolyTy x) tyS (!venv); tyS)
+	  | inst tyS (ArrowTy (t1,t2)) = ArrowTy (inst tyS t1, inst tyS t2)
+	  | inst tyS (ListTy s) = ListTy (inst tyS s)
+	  | inst tyS (VectorTy (t,x)) = VectorTy (inst tyS t, x)
+	  | inst tyS x = x
+
+	and constr_e (Node (Int _, _, _, _)) = IntTy 
+	  | constr_e (Node (String _, _, _, _)) = StringTy
+	  | constr_e (Node (Word _, _, _, _)) = WordTy
+	  | constr_e (Node (Real _, _, _, _)) = RealTy
+	  | constr_e (Node (Bool _, _, _, _)) = BoolTy
+	  | constr_e (Node (Char _, _, _, _)) = CharTy
+	  | constr_e (Node (BuiltIn (_,t), _, _, _)) = t
+	  | constr_e (Node (Constraint t, _, _, [e])) =
+	  	let
+			val t' = constr_e e
+			val _ = add_vconstr (t', t)
+		in
+			t'
+		end
+	  | constr_e (Node (Case, _, _, body)) =
+	  	let
+			val cond = hd body
+			val t = constr_e cond
+			val c1 = hd (tl body)
+			val c1l = constr_e (get_match_lhs c1)
+			val c1r = constr_e (get_match_rhs c1)
+			val _ = add_vconstr (c1l, t)
+
+			(* FIXME: match all clauses *)
+		in
+			c1r
+		end
+	  | constr_e (Node (If, _, _, [c,tbr,fbr])) =
+	  	let
+			val c' = constr_e c
+			val _ = add_vconstr (c', BoolTy)
+			val tbr' = constr_e tbr
+			val fbr' = constr_e fbr
+			val rx = fresh_ty ()
+			val _ = add_vconstr (tbr', rx)
+			val _ = add_vconstr (fbr', rx)
+		in
+			rx
+		end
+	  | constr_e (Node (Unit, _, _, _)) = UnitTy 
+	  | constr_e (Node (Seq, _, _, es)) =
+	  		List.foldl (fn (a,b) => constr_e a) (fresh_ty ()) es
+	  | constr_e (Node (Tuple, _, _, es)) =
+	  		TupleTy (map constr_e es)
+	  | constr_e (Node (List, _, _, es)) =
+	  		ListTy (
+				List.foldl (fn (a,b) =>
+				let
+					val rx = fresh_ty ()
+					val a' = constr_e a
+					val _ = add_vconstr (b, rx)
+					val _ = add_vconstr (rx, a')
+				in
+					rx
+				end) (fresh_ty ()) es
+			)
+	  | constr_e (Node (Vector, _, st, es)) =
+	  		VectorTy (
+				List.foldl (fn (a,b) =>
+				let
+					val rx = fresh_ty ()
+					val a' = constr_e a
+					val _ = add_vconstr (b, rx)
+					val _ = add_vconstr (rx, a')
+				in
+					rx
+				end) (fresh_ty ()) es,
+				Node (Int (length es),SOME IntTy,st,[])
+			)
+	  | constr_e (Node (Var s, _, st, _)) =
+	  	let
+			val t' = (case Symtab.lookup_v st s of
+						(SOME ty,_) => ty
+					  | (NONE,x) => 
+					  	let
+							val r = fresh_ty ()
+							val _ = Symtab.insert_v st s (SOME r, x)
+						in
+							r
+						end)
+		in
+			t'
+		end
+
+	  | constr_e (Node (App, _, _, [tm1,tm2])) =
+		let
+			val t1' = constr_e tm1
+			val t1 = inst (fresh_ty()) t1'
+			val t2 = constr_e tm2
+			val tx = fresh_ty ()
+ 
+			val _ = add_vconstr (t1,ArrowTy(t2,tx))
+		in
+			tx
+		end
+	  | constr_e (Node (App, _, _, l)) =
+	  	let
+			val (frst::f) = List.rev l
+			val exps' = List.rev f
+			val init = constr_e frst
+ 
+
+		in
+	  		List.foldr (fn (exp,r) =>
+				let
+					val r0 = constr_e exp
+					val r1 = inst (fresh_ty()) r0
+					val r2 = fresh_ty ()
+					val _ = add_vconstr (r0, ArrowTy (r1, r2))
+				in
+					r2
+				end) init exps'
+		end
+	  | constr_e (Node (Fn, _, _, matches)) =
+	  	let
+			val (t1,t2) = constr_m (hd matches)
+			val rx = fresh_ty ()
+		in
+			ArrowTy (rx,t2)
+		end
+	  | constr_e (Node (WildPat, _, _, _)) = fresh_ty ()
+	  | constr_e (Node (VarPat s, _, st, _)) =
+	  	let
+			val r = (case Symtab.lookup_v st s of
+						(SOME t,_) => t
+					  | (NONE,x) => 
+					  	let
+					  		val t = fresh_ty()
+							val _ = Symtab.insert_v st s (SOME t, x)
+						in
+							t
+						end)
+
+		in
+			r
+		end
+	  | constr_e n = raise Fail ("constr_e unhandled: " ^ PrettyPrint.ppexp n)
+
+	and constr_m (Node (Match, _, _, [p,e])) =
+		(constr_e p, constr_e e)
+	  | constr_m _ = raise Fail "constr_m applied to non-match"
 
 	and constr symtab = 
 		let
@@ -56,13 +211,13 @@ struct
 					val r = fresh_ty ()
 					val _ = upd ve s (SOME r, SOME e)
 					val _ = print ("INSIDE LIST APP: " ^ PrettyPrint.ppexp e ^ "\n")
-					(* val t' = constr_e e *)
+					val t' = constr_e e
 
-				(*	val _ = print ("INSIDE LIST APP TY: " ^ PrettyPrint.ppty t' ^ "\n")*)
+					val _ = print ("INSIDE LIST APP TY: " ^ PrettyPrint.ppty t' ^ "\n")
 
 					val _ = Symtab.print_scope symtab
 				in
-					((*add_vconstr (r, t');*)
+					(add_vconstr (r, t');
 					 print "\nConstraint Set:\n";
 					 print_constr (!venv);
 					 venv := unify (!venv);
@@ -207,6 +362,15 @@ struct
         else if occursin (UVar x) tyT then
            (raise (Fail "Circular constraints"))
         else (unify (substinconstr (UVar x) tyT rest)) @ [(UVar x,tyT)]
+	 | unify ((IntTy, IntTy) :: rest) = unify rest
+	 | unify ((StringTy, StringTy) :: rest) = unify rest
+	 | unify ((UnitTy, UnitTy) :: rest) = unify rest
+	 | unify ((BoolTy, BoolTy) :: rest) = unify rest
+	 | unify ((RealTy, RealTy) :: rest) = unify rest
+	 | unify ((CharTy, CharTy) :: rest) = unify rest
+	 | unify ((WordTy, WordTy) :: rest) = unify rest
+	 | unify ((VectorTy (t1,v1), VectorTy (t2,v2)) :: rest) = 
+	 	unify ((t1,t2) :: rest)
      | unify ((ArrowTy(tyS1,tyS2),ArrowTy(tyT1,tyT2)) :: rest) =
         unify ((tyS1,tyT1) :: (tyS2,tyT2) :: rest)
 	 | unify ((ListTy tyS1, ListTy tyS2) :: rest) =

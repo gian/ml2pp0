@@ -57,6 +57,7 @@ struct
 	  | ppast (RecordPat true) = "RecordPat(...)"
 	  | ppast (RecordPat false) = "RecordPat"
 	  | ppast FieldPat = "FieldPat"
+	  | ppast WildPat = "_"
 	and ppbinds [] = ""
 	  | ppbinds [h] = ppbind h
 	  | ppbinds (h::t) = ppbind h ^ " \nand " ^ ppbinds t
@@ -97,6 +98,13 @@ struct
 	  | ppty (UVar i) = "?X" ^ Int.toString i
 	  | ppty (PolyTy i) = "'" ^ String.str 
 	  							(Char.chr (Char.ord #"a" + i))
+	  | ppty IntTy = "int"
+	  | ppty StringTy = "string"
+	  | ppty BoolTy = "bool"
+	  | ppty RealTy = "real"
+	  | ppty CharTy = "char"
+	  | ppty WordTy = "word"
+	  | ppty (VectorTy (t,e)) = ppty t ^ " vector<" ^ ppexp e ^ ">"
 	  | ppty _ = "<unpretty-printed ty>"
 	and ppopr BOr = "orelse"
 	  | ppopr BAnd = "andalso"
