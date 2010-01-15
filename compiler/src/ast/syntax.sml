@@ -11,6 +11,10 @@ struct
 			SyntaxPopulateSymtabs.translate ()),
 		("SyntaxFundecAnon",
 			SyntaxFundecAnon.translate ()),
+		("SyntaxClosureConv",
+			SyntaxClosureConv.translate ()),
+		("SyntaxDefunctionalise",
+			SyntaxDefunctionalise.translate ()),
 		("SyntaxCollapseDecs",
 			SyntaxCollapseDecs.translate ())
 	]

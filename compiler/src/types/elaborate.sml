@@ -150,10 +150,8 @@ struct
 			val (frst::f) = List.rev l
 			val exps' = List.rev f
 			val init = constr_e frst
- 
-
 		in
-	  		List.foldr (fn (exp,r) =>
+	  		List.foldl (fn (exp,r) =>
 				let
 					val r0 = constr_e exp
 					val r1 = inst (fresh_ty()) r0

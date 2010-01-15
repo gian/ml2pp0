@@ -21,41 +21,15 @@ struct
 									SOME (Ast.ListTy (Ast.PolyTy 0)),
 									Symtab.basis, [])))
 
-	val _ = builtin "=" 
-				(Ast.PolyTy 0)
-				(Ast.ArrowTy (
-					Ast.PolyTy 0,
-					Ast.BoolTy))
+	fun builtin_binop s a b c =
+		builtin s 
+			(Ast.TupleTy [a,b])
+			c
 
-	
-	val _ = builtin "+" 
-				(Ast.IntTy)
-				(Ast.ArrowTy (
-					Ast.IntTy,
-					Ast.IntTy))
-
-	val _ = builtin "-" 
-				(Ast.IntTy)
-				(Ast.ArrowTy (
-					Ast.IntTy,
-					Ast.IntTy))
-
-	val _ = builtin "*" 
-				(Ast.IntTy)
-				(Ast.ArrowTy (
-					Ast.IntTy,
-					Ast.IntTy))
-
-	val _ = builtin "div" 
-				(Ast.IntTy)
-				(Ast.ArrowTy (
-					Ast.IntTy,
-					Ast.IntTy))
-
-	val _ = builtin "mod" 
-				(Ast.IntTy)
-				(Ast.ArrowTy (
-					Ast.IntTy,
-					Ast.IntTy))
-
+	val _ = builtin_binop "=" (Ast.PolyTy 0) (Ast.PolyTy 1) Ast.BoolTy 
+	val _ = builtin_binop "+" Ast.IntTy Ast.IntTy Ast.IntTy 
+	val _ = builtin_binop "-" Ast.IntTy Ast.IntTy Ast.IntTy 
+	val _ = builtin_binop "*" Ast.IntTy Ast.IntTy Ast.IntTy 
+	val _ = builtin_binop "div" Ast.IntTy Ast.IntTy Ast.IntTy 
+	val _ = builtin_binop "mod" Ast.IntTy Ast.IntTy Ast.IntTy 
 end

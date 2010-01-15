@@ -9,4 +9,6 @@ ast/syntax_populate_symtabs.sml
 ast/syntax_single_app.sml
 ast/syntax_fundec_anon.sml
 ast/syntax_collapse_decs.sml
+ast/syntax_closure_conv.sml
+ast/syntax_defunctionalise.sml
 ast/syntax.sml
