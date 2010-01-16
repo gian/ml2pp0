@@ -94,7 +94,6 @@ struct
 	  | e_ir (CONS r) = ";<<<CONS>>>>"
 	  | e_ir (DIV r) = e_op "sdiv" r
 	  | e_ir (ELPTR r) = ";<<<ELPTR>>>"
-	  | e_ir (FUNCTION r) = ";<<<FUNCTION>>>"
 	  | e_ir (ICMP (x,opr,y,z)) = c
 	  	[e_as x "icmp",
 		 opr,
@@ -116,13 +115,29 @@ struct
 		 eql,
 		 "load ",
 		 e_st s2]
+	  | e_ir (MOV (s1,s2)) = e_op "or" (s1,IntImm 0,s2)
+	  | e_ir (FUNCTION (n,t2,[inp],body)) = c
+	  	["define ",
+		 e_ty t2,
+		 " ",
+		 e_st' n,
+		 "( ",
+		 e_st inp,
+		 " ) {\n",
+		 String.concatWith "\n\t" (map e_ir body),
+		 "\n}\n"]
+	  | e_ir (LABEL l) = c
+	  	["L",
+		 Int.toString l,
+		 ": "]
 	  | e_ir (UnconvertedExp e) = "; Unconverted: " ^ PrettyPrint.ppexp e
 	  | e_ir _ = ";<<<<UNIMPLEMENTED>>>>"
 
 
-	fun codegen irl = c
-		["define i32 @main() {\n\t",
-		(String.concatWith "\n\t" (map e_ir irl)),
-		"\n\tret i32 0\n}\n"]
+	fun codegen (funs, irl) = c
+		[String.concatWith "\n\n" (map e_ir funs),
+		 "\n\ndefine i32 @main() {\n\t",
+		 (String.concatWith "\n\t" (map e_ir irl)),
+		 "\n\tret i32 0\n}\n"]
 end
 

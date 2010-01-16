@@ -19,7 +19,8 @@ struct
 
 	val rc = ref 0
 	val nc = ref 0
-	val lc = ref 0
+	val lc = ref 100 (* We want to reserve labels < 100
+						for things like entry and return points *)
 
 	val env = ref [] : (int * store) list ref
 
@@ -42,6 +43,9 @@ struct
 
 	fun unique_register (ty) = Reg ((rc := !rc + 1; 
 							Symbol.fromString ("_r" ^ 
+										Int.toString (!rc))), ty)
+	fun unique_ptr (ty) = Ptr ((rc := !rc + 1; 
+							Symbol.fromString ("_ptr" ^ 
 										Int.toString (!rc))), ty)
 	fun unique_name (ty) = Name ((nc := !nc + 1; 
 							Symbol.fromString ("_anon_" ^ 
@@ -84,6 +88,8 @@ struct
 	  |	SUBI of store * store * int
 	  | STORE of store * store
 	  | UnconvertedExp of Ast.ast
+
+	val funs = ref [] : ir list ref
 
 	fun trans_e (Node (Var s,SOME t,st,_)) =
 		(case lookup s of
@@ -167,8 +173,67 @@ struct
 		in
 			(c, is)
 		end
+	  | trans_e (Node (Fn,_,_,_)) = 
+	  		raise Fail "[BUG] Non closure-converted function in trans_e"
 	  | trans_e n = (Label 0, [UnconvertedExp n])
+
+	and trans_fn name (Node (Fn,SOME (ArrowTy (t1,t2)),st,matches)) =
+		let
+			val _ = print ("trans_fn\n")
+			val inp = unique_register t1
+			val out = unique_ptr t2
+			val out' = unique_register t2
+			val body =  [LABEL 0] @ (* Entry *)
+						[ALLOCA (out,t2)] @ (* Initialise ret val *)
+						(trans_matches inp out matches) @
+						[BR 1] @
+						[LABEL 1] @ (* Return *)
+						[LOAD (out',out)] @
+						[RET (t2,out')]
+		in
+			(out',[FUNCTION (name, t2, [inp], body)])
+		end
 	
+	and trans_matches inp out l =
+		let
+			val l' = map (fn (Node (Match, _,_,[pat,exp])) => 
+							trans_match inp out pat exp
+						   | _ => raise Fail "trans_matches") l
+		in
+			List.foldl (fn (a,b) => b @ a) [] l'
+		end
+
+	(* Each match must create the label for the next
+		case match and jump to it. *)
+	and trans_match inp out (Node (ConstPat,_,_,[exp])) body =
+		let
+			val (te,ip) = trans_e exp
+			val nm = label () (* Next match label (F) *)
+			val tm = label () (* This match label (T) *)
+			val cv = unique_register (BoolTy)
+			val (rt,ip2) = trans_e body
+		in
+			ip @ [ICMP (cv, "ne", inp, te), 
+				  CBR (cv, nm, tm),
+				  LABEL tm] @
+				  ip2 @
+				  [STORE (out,rt)] @
+				  [BR 1] @
+				  [LABEL nm]
+		end
+	  | trans_match inp out (exp as Node (VarPat s,_,_,[])) body =
+		let
+			val (te,ip) = trans_e exp
+			val nm = label () (* Next match label *)
+			val (rt,ip2) = trans_e body
+		in
+			ip @ 
+			[MOV (te,inp)] @
+			ip2 @
+			[STORE (out,rt)] @
+				  [BR 1] @
+				  [LABEL nm]
+		end
 	and trans_builtin' ("+",ArrowTy(_,rt)) (Composite [t1,t2]) =
 		(fn r => (r, [ADD (r,t1,t2)])) (unique_register rt)
 	  | trans_builtin' ("-",ArrowTy(_,rt)) (Composite [t1,t2]) =
@@ -206,30 +271,48 @@ struct
 
 			val vkeys = map (fn x => 
 							(x, Symtab.lookup_v symtab x)) (!iter_order)
+		
+			val ins = List.foldl 
+					(fn ((s,(SOME (ArrowTy (t1,t2)), SOME e)),instr) =>
+						let
+							val n = name (s,ArrowTy (t1,t2))
+
+							val _ = insert s n
+
+							val (r,i) = trans_fn n e
+
+							val _ = funs := !funs @ i
+						in
+							instr
+						end
+					  | ((s,(SOME t,SOME e)),instr) =>
+						let
+							val _ = print ("Translating " ^ 
+											Symbol.toString s ^ 
+										" = " ^ PrettyPrint.ppexp e ^
+													"\n")
+
+							val (r,i) = trans_e e
+
+							val strins = 
+								(case lookup s of
+									SOME x => [STORE (x,r)]
+								  | NONE =>
+									let
+										val s' = ptr (s,t)
+										val _ = insert s s'
+									in
+										[ALLOCA (s',t),
+										 STORE (s',r)]
+									end)
+
+						in
+							instr @ i @ strins
+						end
+						| (_,instr) => instr) [] vkeys
+
 		in
-			List.foldl (fn ((s,(SOME t,SOME e)),instr) =>
-				let
-					val _ = print ("Translating " ^ Symbol.toString s ^ 
-								" = " ^ PrettyPrint.ppexp e ^ "\n")
-
-					val (r,i) = trans_e e
-
-					val strins = 
-						(case lookup s of
-							SOME x => [STORE (x,r)]
-						  | NONE =>
-						  	let
-								val s' = ptr (s,t)
-								val _ = insert s s'
-							in
-								[ALLOCA (s',t),
-								 STORE (s',r)]
-							end)
-
-				in
-					instr @ i @ strins
-				end
-				| (_,instr) => instr) [] vkeys
+			(!funs,ins)
 		end
 end
 
