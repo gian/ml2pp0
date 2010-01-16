@@ -7,7 +7,12 @@ struct
 
 	open A
 
-	fun convOpr s = A.Node(A.Var (S.fromString s),NONE,Symtab.basis,[])
+	fun convOpr s = (((fn (_,SOME e) => e
+	                  | _ => raise Fail "Operator not found")
+					  	(Symtab.lookup_v Symtab.basis 
+							(S.fromString s))))
+					 handle _ =>
+			A.Node(A.Var (S.fromString s),NONE,Symtab.basis,[])
 
 	fun translate _ prog =
 	let
