@@ -184,15 +184,15 @@ struct
 							b @ [Node(Match, SOME t2, symtab, [p,e])]) 
 								[(Node(Match,SOME r2,symtab,[tml,tmr]))]
 								matches'
-								
-		(*	val _ = app (fn (p',e') => 
+							
+			val _ = List.foldl 
+					(fn (((pt,_),(et,_)),(pt',et')) =>
 							let
-								val r3 = constr_p p'
-								val r4 = constr_e e'
+								val _ = add_vconstr (pt,pt')
+								val _ = add_vconstr (et,et')
 							in
-								(add_vconstr (r3, r1);
-								 add_vconstr (r4, r2))
-							end) (tl match)*)
+								(pt,et)
+							end) (r1,r2) matches'
 		in
 			(r0, Node(Fn, SOME r0, symtab, matches''))
 		end
@@ -212,10 +212,23 @@ struct
 							val _ = Symtab.insert_v st s (SOME t, x)
 						in
 							t
-						end)
-
+						end) handle _ =>
+						let
+							val t = fresh_ty()
+							val _ = Symtab.insert_v st s 
+								(SOME t, 
+								 SOME (Node (VarPat s, SOME t, st, ch)))
+						in
+							t
+						end
 		in
 			(r, Node(VarPat s, SOME r, st, ch))
+		end
+	  | constr_e (Node (ConstPat, _, st, [e])) =
+	  	let
+			val (t',e') = constr_e e
+		in
+			(t',Node (ConstPat, SOME t', st, [e']))
 		end
 	  | constr_e n = raise Fail ("constr_e unhandled: " ^ PrettyPrint.ppexp n)
 

@@ -118,7 +118,11 @@ struct
 				let
 					val st = ref (Symtab.symtab scope)
 
-					val e' = Node(Fn,NONE,st,m)
+					fun setst (x as Node (Fn,_,_,_)) = x
+					  | setst (x as Node (Let _,_,_,_)) = x
+					  | setst (Node (s,t,_,c)) = Node (s,t,st,map setst c)
+
+					val e' = Node(Fn,NONE,st,map setst m)
 
 					val _ = patToSt scope x (SOME e') 
 				in

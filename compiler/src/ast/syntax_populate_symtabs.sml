@@ -37,6 +37,8 @@ struct
 		end
 	  | symtab_popl_exp scope (Node(VarPat name,t,_,ch)) =
 	  	let
+			val _ = print 
+				("symtab_popl_exp: " ^ Symbol.toString name ^ "\n")
 			val _ = Symtab.insert_v scope name (t,NONE)
 		in
 	  		Node(VarPat name,t,scope,ch)

@@ -54,10 +54,12 @@ struct
 	  | ppast TuplePat = "TuplePat"
 	  | ppast ListPat = "ListPat"
 	  | ppast UnitPat = "UnitPat"
+	  | ppast ConstPat = "ConstPat"
 	  | ppast (RecordPat true) = "RecordPat(...)"
 	  | ppast (RecordPat false) = "RecordPat"
 	  | ppast FieldPat = "FieldPat"
 	  | ppast WildPat = "_"
+	  | ppast _ = raise Fail "ppast: unmatched"
 	and ppbinds [] = ""
 	  | ppbinds [h] = ppbind h
 	  | ppbinds (h::t) = ppbind h ^ " \nand " ^ ppbinds t
