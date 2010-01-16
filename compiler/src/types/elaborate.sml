@@ -9,7 +9,7 @@ struct
 
 	val tenv = ref [] : constraint_set ref
 	val venv = ref [] : constraint_set ref
-	val tv = ref 50;
+	val tv = ref 5;
 	val pv = ref ~1;
 
 	fun add_vconstr (l,r) = (venv := (l,r) :: (!venv);
@@ -48,66 +48,81 @@ struct
 	  | inst tyS (ArrowTy (t1,t2)) = ArrowTy (inst tyS t1, inst tyS t2)
 	  | inst tyS (ListTy s) = ListTy (inst tyS s)
 	  | inst tyS (VectorTy (t,x)) = VectorTy (inst tyS t, x)
+	  | inst tyS (TupleTy l) = TupleTy (map (inst tyS) l)
 	  | inst tyS x = x
 
-	and constr_e (Node (Int _, _, _, _)) = IntTy 
-	  | constr_e (Node (String _, _, _, _)) = StringTy
-	  | constr_e (Node (Word _, _, _, _)) = WordTy
-	  | constr_e (Node (Real _, _, _, _)) = RealTy
-	  | constr_e (Node (Bool _, _, _, _)) = BoolTy
-	  | constr_e (Node (Char _, _, _, _)) = CharTy
-	  | constr_e (Node (BuiltIn (_,t), _, _, _)) = t
-	  | constr_e (Node (Constraint t, _, _, [e])) =
+	and set_ty (Node (e, _, st, c)) t = (t, Node(e, SOME t, st, c))
+
+	and constr_e (n as Node (Int v, _, st, c)) = set_ty n IntTy
+	  | constr_e (n as Node (String _, _, _, _)) = set_ty n StringTy
+	  | constr_e (n as Node (Word _, _, _, _)) = set_ty n WordTy
+	  | constr_e (n as Node (Real _, _, _, _)) = set_ty n RealTy
+	  | constr_e (n as Node (Bool _, _, _, _)) = set_ty n BoolTy
+	  | constr_e (n as Node (Char _, _, _, _)) = set_ty n CharTy
+	  | constr_e (n as Node (BuiltIn (_,t), _, _, _)) = set_ty n t
+	  | constr_e (n as Node (Constraint t, _, st, [e])) =
 	  	let
-			val t' = constr_e e
+			val (t',e') = constr_e e
 			val _ = add_vconstr (t', t)
 		in
-			t'
+			(t', Node (Constraint t, SOME t, st, [e']))
 		end
-	  | constr_e (Node (Case, _, _, body)) =
+	  | constr_e (n as Node (Case, _, st, body)) =
 	  	let
 			val cond = hd body
-			val t = constr_e cond
+			val (t,cond') = constr_e cond
 			val c1 = hd (tl body)
-			val c1l = constr_e (get_match_lhs c1)
-			val c1r = constr_e (get_match_rhs c1)
+			val (c1l,_) = constr_e (get_match_lhs c1)
+			val (c1r,_) = constr_e (get_match_rhs c1)
 			val _ = add_vconstr (c1l, t)
 
 			(* FIXME: match all clauses *)
 		in
-			c1r
+			(c1r, n) (* Fixme set type *)
 		end
-	  | constr_e (Node (If, _, _, [c,tbr,fbr])) =
+	  | constr_e (Node (If, _, st, [c,tbr,fbr])) =
 	  	let
-			val c' = constr_e c
+			val (c',a) = constr_e c
 			val _ = add_vconstr (c', BoolTy)
-			val tbr' = constr_e tbr
-			val fbr' = constr_e fbr
+			val (tbr',b) = constr_e tbr
+			val (fbr',c) = constr_e fbr
 			val rx = fresh_ty ()
 			val _ = add_vconstr (tbr', rx)
 			val _ = add_vconstr (fbr', rx)
 		in
-			rx
+			(rx, Node (If, SOME rx, st, [a,b,c]))
 		end
-	  | constr_e (Node (Unit, _, _, _)) = UnitTy 
-	  | constr_e (Node (Seq, _, _, es)) =
-	  		List.foldl (fn (a,b) => constr_e a) (fresh_ty ()) es
-	  | constr_e (Node (Tuple, _, _, es)) =
-	  		TupleTy (map constr_e es)
-	  | constr_e (Node (List, _, _, es)) =
-	  		ListTy (
-				List.foldl (fn (a,b) =>
-				let
-					val rx = fresh_ty ()
-					val a' = constr_e a
-					val _ = add_vconstr (b, rx)
-					val _ = add_vconstr (rx, a')
-				in
-					rx
-				end) (fresh_ty ()) es
-			)
-	  | constr_e (Node (Vector, _, st, es)) =
-	  		VectorTy (
+	  | constr_e (n as Node (Unit, _, _, _)) = set_ty n UnitTy
+	  | constr_e (Node (Seq, _, st, es)) =
+	  	let
+			val es' = map constr_e es
+	  		val (types,exps) = ListPair.unzip es'
+			val t' = hd (List.rev types)
+		in
+			(t', Node (Seq, SOME t', st, exps))
+		end
+	  | constr_e (Node (Tuple, _, st, es)) =
+	  	let
+			val es' = map constr_e es
+			val (types,exps) = ListPair.unzip es'
+			val t' = TupleTy types
+		in
+			(t',Node (Tuple, SOME t', st, exps))
+		end
+	  | constr_e (Node (List, _, st, es)) =
+	  	let
+			val es' = map constr_e es
+			val (types,exps) = ListPair.unzip es'
+			val r = fresh_ty ()
+			val _ = List.foldl (fn (a,b) => 
+									(add_vconstr (b, a); a)) r types
+			val t' = ListTy r
+		in
+			(t',Node (List, SOME t', st, exps))
+		end
+	  | constr_e (n as Node (Vector, _, st, es)) =
+	  		raise Fail "Vector constr_e not implemented"
+	  	(*	VectorTy (
 				List.foldl (fn (a,b) =>
 				let
 					val rx = fresh_ty ()
@@ -118,8 +133,8 @@ struct
 					rx
 				end) (fresh_ty ()) es,
 				Node (Int (length es),SOME IntTy,st,[])
-			)
-	  | constr_e (Node (Var s, _, st, _)) =
+			)*)
+	  | constr_e (Node (Var s, _, st, ch)) =
 	  	let
 			val t' = (case Symtab.lookup_v st s of
 						(SOME ty,_) => ty
@@ -131,45 +146,63 @@ struct
 							r
 						end)
 		in
-			t'
+			(t', Node (Var s, SOME t', st, ch))
 		end
 
-	  | constr_e (Node (App, _, _, [tm1,tm2])) =
+	  | constr_e (Node (App, _, st, [tm1,tm2])) =
 		let
-			val t1' = constr_e tm1
+			val (t1',tm1') = constr_e tm1
 			val t1 = inst (fresh_ty()) t1'
-			val t2 = constr_e tm2
+
+			val _ = print ("t1': " ^ PrettyPrint.ppty t1' ^ "\n")
+			val _ = print ("t1: " ^ PrettyPrint.ppty t1 ^ "\n")
+
+			val (t2,tm2') = constr_e tm2
 			val tx = fresh_ty ()
+			
+			val _ = print ("t2: " ^ PrettyPrint.ppty t2 ^ "\n")
  
 			val _ = add_vconstr (t1,ArrowTy(t2,tx))
 		in
-			tx
+			(tx, Node (App, SOME tx, st, [tm1',tm2']))
 		end
-	  | constr_e (Node (App, _, _, l)) =
+	  | constr_e (Node (App, _, _, l)) = raise (Fail "non 2-value app")
+	  | constr_e (Node (Fn, _, symtab, matches)) =
 	  	let
-			val (frst::f) = List.rev l
-			val exps' = List.rev f
-			val init = constr_e frst
+			(* val _ = Symtab.print_scope symtab *)
+ 
+			val r0 = fresh_ty ()
+			val matches' = map constr_m matches
+			val _ = constr symtab
+
+			val ((r1,tml),(r2,tmr)) = hd matches'
+
+			val _ = add_vconstr (r0,ArrowTy (r1,r2))
+
+			val matches'' =
+						List.foldl (fn (((_,p),(t2,e)),b) =>
+							b @ [Node(Match, SOME t2, symtab, [p,e])]) 
+								[(Node(Match,SOME r2,symtab,[tml,tmr]))]
+								matches'
+								
+		(*	val _ = app (fn (p',e') => 
+							let
+								val r3 = constr_p p'
+								val r4 = constr_e e'
+							in
+								(add_vconstr (r3, r1);
+								 add_vconstr (r4, r2))
+							end) (tl match)*)
 		in
-	  		List.foldl (fn (exp,r) =>
-				let
-					val r0 = constr_e exp
-					val r1 = inst (fresh_ty()) r0
-					val r2 = fresh_ty ()
-					val _ = add_vconstr (r0, ArrowTy (r1, r2))
-				in
-					r2
-				end) init exps'
+			(r0, Node(Fn, SOME r0, symtab, matches''))
 		end
-	  | constr_e (Node (Fn, _, _, matches)) =
+	  | constr_e (Node (WildPat, _, st, ch)) = 
 	  	let
-			val (t1,t2) = constr_m (hd matches)
-			val rx = fresh_ty ()
+			val t' = fresh_ty ()
 		in
-			ArrowTy (rx,t2)
+	  		(t',Node (WildPat, SOME t', st, ch))
 		end
-	  | constr_e (Node (WildPat, _, _, _)) = fresh_ty ()
-	  | constr_e (Node (VarPat s, _, st, _)) =
+	  | constr_e (Node (VarPat s, _, st, ch)) =
 	  	let
 			val r = (case Symtab.lookup_v st s of
 						(SOME t,_) => t
@@ -182,12 +215,17 @@ struct
 						end)
 
 		in
-			r
+			(r, Node(VarPat s, SOME r, st, ch))
 		end
 	  | constr_e n = raise Fail ("constr_e unhandled: " ^ PrettyPrint.ppexp n)
 
-	and constr_m (Node (Match, _, _, [p,e])) =
-		(constr_e p, constr_e e)
+	and constr_m (Node (Match, _, st, [p,e])) =
+		let
+			val (pt,p') = constr_e p
+			val (et,e') = constr_e e
+		in
+			((pt,p'),(et,e'))
+		end
 	  | constr_m _ = raise Fail "constr_m applied to non-match"
 
 	and constr symtab = 
@@ -200,33 +238,37 @@ struct
 			val vkeys = List.map (fn x => (x, Symtab.lookup_v symtab x))
 							(!iter_order)
 
-			val _ = Symtab.print_scope symtab
 		in
 			List.app (fn (s,(t,SOME e)) =>
 				if s = (Symbol.fromString "__parent_scope") 
 				then () else
 				let
+					val _ = print ("******** constraining " ^ Symbol.toString s ^ "\n")
 					val r = fresh_ty ()
 					val _ = upd ve s (SOME r, SOME e)
 					val _ = print ("INSIDE LIST APP: " ^ PrettyPrint.ppexp e ^ "\n")
-					val t' = constr_e e
+					val (t',e') = constr_e e
 
 					val _ = print ("INSIDE LIST APP TY: " ^ PrettyPrint.ppty t' ^ "\n")
 
+					val _ = upd ve s (SOME t', SOME e')
+					val _ = venv := substinconstr r t' (!venv)
+					val _ = substinenv r t' symtab
+
 					val _ = Symtab.print_scope symtab
 				in
-					(add_vconstr (r, t');
-					 print "\nConstraint Set:\n";
-					 print_constr (!venv);
+					(
+					(* print "\nConstraint Set:\n";
+					 print_constr (!venv);*)
 					 venv := unify (!venv);
-					print "\nConstraint Set (Unify):\n";
-					 print_constr (!venv);
-					 venv := generalise (!venv);
+				(*	print "\nConstraint Set (Unify):\n";
+					 print_constr (!venv); *)
+					 venv := generalise (!venv); 
 					 print "\nConstraint Set (Generalise):\n";
 					 print_constr (!venv)
 					 )
 				end
-			  | (s,(t,NONE)) => ()) (List.rev vkeys)
+			  | (s,(t,NONE)) => ()) vkeys
 		end
 
 
@@ -237,6 +279,7 @@ struct
          	(case tyS of (ArrowTy(tyS1,tyS2)) => (ArrowTy(f tyS1,f tyS2))
 				    | (UVar n) => if n = x1 then tyT else (UVar n)
 					| (ListTy l) => ListTy (f l)
+					| (TupleTy l) => TupleTy (map f l)
 					| x => x)
      	in
         	f tyS
@@ -247,6 +290,7 @@ struct
         	(case tyS of (ArrowTy(tyS1,tyS2)) => (ArrowTy(f tyS1,f tyS2))
                     | (ListTy l) => ListTy (f l)
 					| (PolyTy n) => if n = x1 then tyT else (PolyTy n)
+					| (TupleTy l) => TupleTy (map f l)
 					| x => x)
 		in
         	f tyS
@@ -311,9 +355,9 @@ struct
 		let
 			val _ = substinprog tyX tyT
 
-			val _ = print ("   * Type Sub: [" ^
+	(*		val _ = print ("   * Type Sub: [" ^
 							PrettyPrint.ppty tyX ^ "/" ^
-							PrettyPrint.ppty tyT ^ "]\n")
+							PrettyPrint.ppty tyT ^ "]\n") *)
 		
 
 			val constr' = map (fn (l,r) => (substinty tyX tyT l, substinty tyX tyT r)) constr
@@ -325,13 +369,13 @@ struct
 		let
 			val _ = substinprog tyX tyT
 			
-			val _ = print ("   * RHS Type Sub: [" ^
+		(*	val _ = print ("   * RHS Type Sub: [" ^
 							PrettyPrint.ppty tyX ^ "/" ^
-							PrettyPrint.ppty tyT ^ "]\n")
+							PrettyPrint.ppty tyT ^ "]\n") *)
 		
 
 			val constr' = map (fn (l,r) => (l, substinty tyX tyT r)) constr
-		val _ = print_constr constr'
+		(*val _ = print_constr constr' *)
 		in
 			constr'
 		end
@@ -373,6 +417,8 @@ struct
         unify ((tyS1,tyT1) :: (tyS2,tyT2) :: rest)
 	 | unify ((ListTy tyS1, ListTy tyS2) :: rest) =
 	 	unify ((tyS1,tyS2) :: rest)
+	 | unify ((TupleTy tyT1, TupleTy tyT2) :: rest) =
+	 	unify ((ListPair.zip (tyT1,tyT2)) @ rest)
 	 | unify ((PolyTy a, VarTy b) :: rest) = 
             (unify (substinconstr (PolyTy a) (VarTy b) rest)) @ 
 				[(PolyTy a,VarTy b)]
@@ -392,6 +438,8 @@ struct
 			  | collect_tyvars (ArrowTy (t1,t2)) =
 			  		collect_tyvars t1 @ collect_tyvars t2
 			  | collect_tyvars (ListTy x) = collect_tyvars x
+			  | collect_tyvars (TupleTy x) = 
+			  		List.foldl (fn (a,b) => b @ collect_tyvars a) [] x
 			  | collect_tyvars x = []
 
 			fun unique [] = []

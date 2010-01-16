@@ -64,8 +64,13 @@ struct
 								 st,
 								 [
 								 	convOpr (S.toString s),
-								 	A.Node (A.App,NONE,st,lhs), 
-								 	splitOnOp s [] t
+								 	A.Node(Tuple,
+									NONE,
+									st,
+									[
+										A.Node (A.App,NONE,st,lhs), 
+								 		splitOnOp s [] t
+									])
 								 ])
 					else
 						splitOnOp s (lhs @ [h]) t

@@ -26,7 +26,7 @@ struct
 			(Ast.TupleTy [a,b])
 			c
 
-	val _ = builtin_binop "=" (Ast.PolyTy 0) (Ast.PolyTy 1) Ast.BoolTy 
+	val _ = builtin_binop "=" (Ast.PolyTy 0) (Ast.PolyTy 0) Ast.BoolTy 
 	val _ = builtin_binop "+" Ast.IntTy Ast.IntTy Ast.IntTy 
 	val _ = builtin_binop "-" Ast.IntTy Ast.IntTy Ast.IntTy 
 	val _ = builtin_binop "*" Ast.IntTy Ast.IntTy Ast.IntTy 
