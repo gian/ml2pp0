@@ -196,6 +196,7 @@ struct
 	
 	and trans_matches inp out l =
 		let
+			val _ = print ("trans_matches: " ^ Int.toString (length l) ^ "\n")
 			val l' = map (fn (Node (Match, _,_,[pat,exp])) => 
 							trans_match inp out pat exp
 						   | _ => raise Fail "trans_matches") l
@@ -223,6 +224,7 @@ struct
 		end
 	  | trans_match inp out (exp as Node (VarPat s,_,_,[])) body =
 		let
+			val _ = print ("trans_match: "^ PrettyPrint.ppexp exp^"\n")
 			val (te,ip) = trans_e exp
 			val nm = label () (* Next match label *)
 			val (rt,ip2) = trans_e body

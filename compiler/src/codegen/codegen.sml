@@ -136,7 +136,7 @@ struct
 
 	fun codegen (funs, irl) = c
 		[String.concatWith "\n\n" (map e_ir funs),
-		 "\n\ndefine i32 @main() {\n\t",
+		 "\n\ndefine i32 @main() {\nentry:\n\t",
 		 (String.concatWith "\n\t" (map e_ir irl)),
 		 "\n\tret i32 0\n}\n"]
 end

@@ -183,7 +183,7 @@ struct
 						List.foldl (fn (((_,p),(t2,e)),b) =>
 							b @ [Node(Match, SOME t2, symtab, [p,e])]) 
 								[(Node(Match,SOME r2,symtab,[tml,tmr]))]
-								matches'
+								(tl matches')
 							
 			val _ = List.foldl 
 					(fn (((pt,_),(et,_)),(pt',et')) =>

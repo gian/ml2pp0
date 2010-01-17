@@ -29,7 +29,10 @@ struct
  
 	fun dec (A.FunDec (tyvars,clauses)) = 
 		let
+			val _ = print ("FunDec: " ^ Int.toString (length clauses) ^ "\n")
 			val fns = map onefn clauses	
+			
+			val _ = print ("FunDec fns: " ^ Int.toString (length fns) ^ "\n")
 		in
 			A.ValDec {tyvars=tyvars,
 					  valBind=[],
