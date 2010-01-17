@@ -95,11 +95,13 @@ struct
 	  | e_ir (DIV r) = e_op "sdiv" r
 	  | e_ir (ELPTR r) = ";<<<ELPTR>>>"
 	  | e_ir (ICMP (x,opr,y,z)) = c
-	  	[e_as x "icmp",
-		 opr,
+	  	[e_st' x,
+		 eql,
+		 "icmp ",
+		 opr," ",
 		 e_st y,
 		 sep,
-		 e_st z]
+		 e_st' z]
 	  | e_ir (MUL r) = e_op "mul" r
 	  | e_ir (RET (t,s)) = c
 	  	["ret ",
@@ -130,6 +132,24 @@ struct
 	  	["L",
 		 Int.toString l,
 		 ": "]
+      | e_ir (PHI (r,t,(b1,l1),(b2,l2))) = c
+	  	[e_st' r,
+		 eql,
+		 "phi ",
+		 e_ty t,
+		 " [ ",
+		 e_st' b1,
+		 sep,
+		 "%L",
+		 Int.toString l1,
+		 " ]",
+		 sep,
+		 " [ ",
+		 e_st' b2,
+		 sep,
+		 "%L",
+		 Int.toString l2,
+		 " ]"]
 	  | e_ir (UnconvertedExp e) = "; Unconverted: " ^ PrettyPrint.ppexp e
 	  | e_ir _ = ";<<<<UNIMPLEMENTED>>>>"
 

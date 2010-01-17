@@ -20,6 +20,9 @@ struct
 							 	(Ast.Node (Ast.List,
 									SOME (Ast.ListTy (Ast.PolyTy 0)),
 									Symtab.basis, [])))
+	val _ = builtin "print_int" Types.tyInt Types.tyInt
+	val _ = builtin "input_int" Ast.IntTy Ast.IntTy
+	val _ = builtin "print" Types.tyString Types.tyInt
 
 	fun builtin_binop s a b c =
 		builtin s 
@@ -32,4 +35,9 @@ struct
 	val _ = builtin_binop "*" Ast.IntTy Ast.IntTy Ast.IntTy 
 	val _ = builtin_binop "div" Ast.IntTy Ast.IntTy Ast.IntTy 
 	val _ = builtin_binop "mod" Ast.IntTy Ast.IntTy Ast.IntTy 
+	val _ = builtin_binop "<" Ast.IntTy Ast.IntTy Ast.BoolTy 
+	val _ = builtin_binop ">" Ast.IntTy Ast.IntTy Ast.BoolTy 
+	val _ = builtin_binop "<>" Ast.IntTy Ast.IntTy Ast.BoolTy 
+	val _ = builtin_binop ">=" Ast.IntTy Ast.IntTy Ast.BoolTy 
+	val _ = builtin_binop "<=" Ast.IntTy Ast.IntTy Ast.BoolTy 
 end

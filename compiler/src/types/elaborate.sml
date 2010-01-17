@@ -224,6 +224,13 @@ struct
 		in
 			(r, Node(VarPat s, SOME r, st, ch))
 		end
+	  | constr_e (Node (TuplePat, _, st, ch)) =
+	  	let
+			val (tys,ch') = ListPair.unzip (map constr_e ch)
+			val t = TupleTy tys
+		in
+			(t, Node(TuplePat, SOME t, st, ch'))
+		end
 	  | constr_e (Node (ConstPat, _, st, [e])) =
 	  	let
 			val (t',e') = constr_e e

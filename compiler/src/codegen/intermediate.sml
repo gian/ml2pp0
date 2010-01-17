@@ -173,6 +173,31 @@ struct
 		in
 			(c, is)
 		end
+	  | trans_e (Node (If,SOME t,_,[cond,tbr,fbr])) =
+	  	let
+			val tlab = label ()
+			val flab = label ()
+			val philab = label ()
+
+			val (cond',cins) = trans_e cond
+			val (tbr',tins) = trans_e tbr
+			val (fbr',fins) = trans_e fbr
+
+			val phi = unique_register t
+		in
+			(phi, 
+			 cins @
+			 [CBR (cond',tlab,flab)] @
+			 [LABEL tlab] @
+			 tins @
+			 [BR philab] @
+			 [LABEL flab] @
+			 fins @
+			 [BR philab] @
+			 [LABEL philab] @
+			 [PHI (phi,t,(tbr',tlab),(fbr',flab))]
+			)
+		end
 	  | trans_e (Node (Fn,_,_,_)) = 
 	  		raise Fail "[BUG] Non closure-converted function in trans_e"
 	  | trans_e n = (Label 0, [UnconvertedExp n])
@@ -197,16 +222,64 @@ struct
 	and trans_matches inp out l =
 		let
 			val _ = print ("trans_matches: " ^ Int.toString (length l) ^ "\n")
-			val l' = map (fn (Node (Match, _,_,[pat,exp])) => 
+		(*	val l' = map (fn (Node (Match, _,_,[pat,exp])) => 
 							trans_match inp out pat exp
-						   | _ => raise Fail "trans_matches") l
+						   | _ => raise Fail "trans_matches") l *)
 		in
-			List.foldl (fn (a,b) => b @ a) [] l'
+		(*	List.foldl (fn (a,b) => b @ a) [] l' *) []
 		end
 
 	(* Each match must create the label for the next
 		case match and jump to it. *)
-	and trans_match inp out (Node (ConstPat,_,_,[exp])) body =
+
+	and trans_match (Node (ConstPat,_,_,[exp])) inp =
+		let
+			val (te,ip) = trans_e exp
+			val cv = unique_register (BoolTy)
+		in
+			(true, cv, ip @ [ICMP (cv, "eq", inp, te)])
+		end
+	and trans_match (exp as Node (VarPat s,_,_,[])) inp =
+		let
+			val (te,ip) = trans_e exp
+		in
+			(false, te, ip @ [MOV (te,inp)])
+		end
+	and trans_match (Node (TuplePat, SOME (TupleTy t), _, ch)) inp =
+		let
+			val (te,ip) = trans_e inp
+
+			val index = ref 0
+			val ch' = map (fn (c,t') =>
+					let
+						val r = unique_register t'
+						val ind = !index
+						val _ = index := !index + 1
+					in
+						(r,EXTRACT (r,t,ind))
+					end) (ListPair.zip (ch,t))
+
+			val (inp',ins) = ListPair.unzip ch'
+
+			val ch'' = map (fn (c,i) => trans_match c i)
+							(ListPair.zip (ch,inp'))
+
+			val consts = List.filter (fn (x,_,_) => x) ch''
+			val binds = List.filter (fn (x,_,_) => not x) ch''
+
+			val (const_cv,consts') = List.foldl (fn ((_,cv,ins),(last,inss)) =>
+				let
+					val n = unique_register (BoolTy)
+				in
+					(n,ins @ [AND (n,last,cv)])
+				end) (BoolImm true,[]) consts
+
+			val binds' = List.foldl 
+							(fn ((_,_,ins),i) => i @ ins) [] binds 
+		in
+			(true, const_cv, ins @ consts' @ binds')
+		end
+	(*and trans_match inp out (Node (ConstPat,_,_,[exp])) body =
 		let
 			val (te,ip) = trans_e exp
 			val nm = label () (* Next match label (F) *)
@@ -236,6 +309,12 @@ struct
 				  [BR 1] @
 				  [LABEL nm]
 		end
+	  | trans_match inp out (Node (TuplePat, SOME t, _, ch)) body =
+	  	let
+
+		in
+
+		end*)
 	and trans_builtin' ("+",ArrowTy(_,rt)) (Composite [t1,t2]) =
 		(fn r => (r, [ADD (r,t1,t2)])) (unique_register rt)
 	  | trans_builtin' ("-",ArrowTy(_,rt)) (Composite [t1,t2]) =
@@ -251,11 +330,18 @@ struct
 	  | trans_builtin' (">=",ArrowTy(_,rt)) (Composite [t1,t2]) =
 		(fn r => (r, [ICMP (r,"sge",t1,t2)])) (unique_register rt)
 	  | trans_builtin' ("<",ArrowTy(_,rt)) (Composite [t1,t2]) =
-		(fn r => (r, [ICMP (r,"lt",t1,t2)])) (unique_register rt)
+		(fn r => (r, [ICMP (r,"slt",t1,t2)])) (unique_register rt)
 	  | trans_builtin' (">",ArrowTy(_,rt)) (Composite [t1,t2]) =
-		(fn r => (r, [ICMP (r,"gt",t1,t2)])) (unique_register rt)
+		(fn r => (r, [ICMP (r,"sgt",t1,t2)])) (unique_register rt)
 	  | trans_builtin' ("<>",ArrowTy(_,rt)) (Composite [t1,t2]) =
 		(fn r => (r, [ICMP (r,"ne",t1,t2)])) (unique_register rt)
+	  | trans_builtin' (s,ArrowTy(t1,t2)) arg =
+	  	let
+			val r = unique_register t2
+			val n = Name (Symbol.fromString s,ArrowTy(t1,t2))
+		in
+			(r, [CALL (r, n, arg)])
+		end
 	  | trans_builtin' _ _ = raise Fail "Unhandled builtin"
 
 	and trans_builtin b tm2 =
