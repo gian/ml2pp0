@@ -15,6 +15,7 @@ struct
 				   | BuiltInName of string * Ast.ty
 				   | Composite of store list
 				   | Ptr of symbol * Ast.ty
+				   | Undef
 				   | Null
 
 	val rc = ref 0
@@ -74,6 +75,8 @@ struct
 	  | CONS of store * store * store
 	  | DIV of store * store * store
 	  | ELPTR of store * int * string * store * int * int
+	  | EXTRACT of store * Ast.ty * store * int 
+	  | INSERT of store * Ast.ty * store * store * int
 	  | FUNCTION of store * Ast.ty * store list * ir list
 	  | ICMP of store * string * store * store 
 	  |	LABEL of int 
@@ -166,12 +169,24 @@ struct
 				end)
 	  | trans_e (Node (Tuple, SOME t, _, ch)) =
 	  	let
-			val comb = map trans_e ch
-			val (ts,is) = ListPair.unzip comb
-			val c = Composite ts
-			val is = List.foldl (fn (a,b) => b @ a) [] is
+			val ind = ref 0
+
+			fun tt r ins [] = (r,ins)
+			  | tt r ins (h::rest) =
+			  	let
+					val (te,i) = trans_e h
+					val r' = unique_register t
+					val ins' =
+						ins @
+						i @
+						[INSERT (r',t,r,te,!ind)]
+
+					val _ = ind := !ind + 1
+				in
+					tt r' ins' rest
+				end	
 		in
-			(c, is)
+			tt Undef [] ch 
 		end
 	  | trans_e (Node (If,SOME t,_,[cond,tbr,fbr])) =
 	  	let
@@ -222,11 +237,33 @@ struct
 	and trans_matches inp out l =
 		let
 			val _ = print ("trans_matches: " ^ Int.toString (length l) ^ "\n")
-		(*	val l' = map (fn (Node (Match, _,_,[pat,exp])) => 
-							trans_match inp out pat exp
-						   | _ => raise Fail "trans_matches") l *)
+			val l' = map (fn (Node (Match, _,_,[pat,exp])) =>
+							let
+								val (iscv,cv,ins) = trans_match pat inp
+								val chain = unique_register BoolTy
+								val tlab = label ()
+								val flab = label ()
+								val (te,eins) = trans_e exp
+							in
+								if iscv then
+									ins
+								  @	[ICMP (chain,"eq",cv,BoolImm true)]
+								  @ [CBR (chain,tlab,flab)]
+								  @ [LABEL tlab]
+								  @ eins
+								  @ [STORE (out,te)]
+								  @ [BR 1]
+								  @ [LABEL flab]
+								else
+									ins
+								  @ eins
+								  @ [STORE (out,te)]
+								  @ [BR 1]
+								  @ [LABEL (label())]
+							end
+						   | _ => raise Fail "trans_matches") l
 		in
-		(*	List.foldl (fn (a,b) => b @ a) [] l' *) []
+			List.foldl (fn (a,b) => b @ a) [] l' 
 		end
 
 	(* Each match must create the label for the next
@@ -239,16 +276,14 @@ struct
 		in
 			(true, cv, ip @ [ICMP (cv, "eq", inp, te)])
 		end
-	and trans_match (exp as Node (VarPat s,_,_,[])) inp =
+	  | trans_match (exp as Node (VarPat s,_,_,[])) inp =
 		let
 			val (te,ip) = trans_e exp
 		in
 			(false, te, ip @ [MOV (te,inp)])
 		end
-	and trans_match (Node (TuplePat, SOME (TupleTy t), _, ch)) inp =
+	  | trans_match (Node (TuplePat, SOME (TupleTy t), _, ch)) inp =
 		let
-			val (te,ip) = trans_e inp
-
 			val index = ref 0
 			val ch' = map (fn (c,t') =>
 					let
@@ -256,7 +291,7 @@ struct
 						val ind = !index
 						val _ = index := !index + 1
 					in
-						(r,EXTRACT (r,t,ind))
+						(r,EXTRACT (r,TupleTy t,inp,ind))
 					end) (ListPair.zip (ch,t))
 
 			val (inp',ins) = ListPair.unzip ch'
@@ -277,7 +312,7 @@ struct
 			val binds' = List.foldl 
 							(fn ((_,_,ins),i) => i @ ins) [] binds 
 		in
-			(true, const_cv, ins @ consts' @ binds')
+			(length consts > 0, const_cv, ins @ consts' @ binds')
 		end
 	(*and trans_match inp out (Node (ConstPat,_,_,[exp])) body =
 		let
@@ -315,26 +350,30 @@ struct
 		in
 
 		end*)
-	and trans_builtin' ("+",ArrowTy(_,rt)) (Composite [t1,t2]) =
-		(fn r => (r, [ADD (r,t1,t2)])) (unique_register rt)
-	  | trans_builtin' ("-",ArrowTy(_,rt)) (Composite [t1,t2]) =
-		(fn r => (r, [SUB (r,t1,t2)])) (unique_register rt)
-	  | trans_builtin' ("*",ArrowTy(_,rt)) (Composite [t1,t2]) =
-		(fn r => (r, [MUL (r,t1,t2)])) (unique_register rt)
-	  | trans_builtin' ("div",ArrowTy(_,rt)) (Composite [t1,t2]) =
-		(fn r => (r, [DIV (r,t1,t2)])) (unique_register rt)
-	  | trans_builtin' ("=",ArrowTy(_,rt)) (Composite [t1,t2]) =
-		(fn r => (r, [ICMP (r,"eq",t1,t2)])) (unique_register rt)
-	  | trans_builtin' ("<=",ArrowTy(_,rt)) (Composite [t1,t2]) =
-		(fn r => (r, [ICMP (r,"sle",t1,t2)])) (unique_register rt)
-	  | trans_builtin' (">=",ArrowTy(_,rt)) (Composite [t1,t2]) =
-		(fn r => (r, [ICMP (r,"sge",t1,t2)])) (unique_register rt)
-	  | trans_builtin' ("<",ArrowTy(_,rt)) (Composite [t1,t2]) =
-		(fn r => (r, [ICMP (r,"slt",t1,t2)])) (unique_register rt)
-	  | trans_builtin' (">",ArrowTy(_,rt)) (Composite [t1,t2]) =
-		(fn r => (r, [ICMP (r,"sgt",t1,t2)])) (unique_register rt)
-	  | trans_builtin' ("<>",ArrowTy(_,rt)) (Composite [t1,t2]) =
-		(fn r => (r, [ICMP (r,"ne",t1,t2)])) (unique_register rt)
+
+	and trans_builtin'' r tm1 tm2 "+" = [ADD (r,tm1,tm2)]
+	  | trans_builtin'' r tm1 tm2 "-" = [SUB (r,tm1,tm2)]
+	  | trans_builtin'' r tm1 tm2 "*" = [MUL (r,tm1,tm2)]
+	  | trans_builtin'' r tm1 tm2 "div" = [DIV (r,tm1,tm2)]
+	  | trans_builtin'' r tm1 tm2 "=" = [ICMP (r,"eq",tm1,tm2)]
+	  | trans_builtin'' r tm1 tm2 "<=" = [ICMP (r,"sle",tm1,tm2)]
+	  | trans_builtin'' r tm1 tm2 ">=" = [ICMP (r,"sge",tm1,tm2)]
+	  | trans_builtin'' r tm1 tm2 "<" = [ICMP (r,"slt",tm1,tm2)]
+	  | trans_builtin'' r tm1 tm2 ">" = [ICMP (r,"sgt",tm1,tm2)]
+	  | trans_builtin'' r tm1 tm2 "<>" = [ICMP (r,"ne",tm1,tm2)]
+	  | trans_builtin'' _ _ _ s = raise Fail ("trans_builtin'': " ^ s)
+
+	and trans_builtin' (opr,ArrowTy(TupleTy [t1,t2],rt)) tm =
+		let
+			val r = unique_register rt
+			val t1' = unique_register t1
+			val t2' = unique_register t2
+			val ins = trans_builtin'' r t1' t2' opr
+		in
+			(r, [EXTRACT (t1',TupleTy [t1,t2], tm, 0),
+				 EXTRACT (t2',TupleTy [t1,t2], tm, 1)]
+				 @ ins)
+		end
 	  | trans_builtin' (s,ArrowTy(t1,t2)) arg =
 	  	let
 			val r = unique_register t2

@@ -8,14 +8,16 @@ LLVMAS="llvm-as"
 TMPPRE="/tmp/mlc.$RANDOM"
 LLC="llc -O3"
 CC=gcc
+LLVMOPT="cat"
 
 $BIN/ml2pp0 $1
 cat $1.ll $LIB/decs.ll >> $TMPPRE.ll
 $LLVMAS $TMPPRE.ll
-$LLC $TMPPRE.bc
-$CC -o $NAME $TMPPRE.s $LIB/basis.c
+$LLVMOPT $TMPPRE.bc > $TMPPRE.opt.bc
+$LLC $TMPPRE.opt.bc
+$CC -o $NAME $TMPPRE.opt.s $LIB/basis.o
 
 echo "% Compilation finished:"
-ls -l $1.ll $TMPPRE.ll  $TMPPRE.bc $TMPPRE.s 
+ls -lh $1.ll $TMPPRE.ll $TMPPRE.bc $TMPPRE.opt.bc $TMPPRE.opt.s
 echo "% Output file:"
-ls -l $NAME
+ls -lh $NAME

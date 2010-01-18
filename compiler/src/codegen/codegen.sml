@@ -29,6 +29,7 @@ struct
 	  | e_st' (BoolImm v) = if v then "1" else "0"
 	  | e_st' (Label i) = c ["L", Int.toString i]
 	  | e_st' (BuiltInName (s,t)) = c ["@", s]
+	  | e_st' (Undef) = "undef"
 	  | e_st' (Composite l) = c ["{ ", 
 	  							String.concatWith sep (map e_st' l),
 								" }"]
@@ -44,6 +45,7 @@ struct
 	  | e_st (BoolImm v) = c ["i1 ", if v then "1" else "0"]
 	  | e_st (Label i) = c ["L", Int.toString i]
 	  | e_st (BuiltInName (s,t)) = c ["@", s]
+	  | e_st (Undef) = "undef"
 	  | e_st (Composite l) = c ["{ ", 
 	  							String.concatWith sep (map e_st l),
 								" }"]
@@ -150,6 +152,24 @@ struct
 		 "%L",
 		 Int.toString l2,
 		 " ]"]
+	  | e_ir (EXTRACT (a,t,b,i)) = c
+	  	[e_st' a,
+		 eql,
+		 "extractvalue ",
+		 e_ty t, " ",
+		 e_st' b,
+		 sep,
+		 Int.toString i]
+	  | e_ir (INSERT (a,t,b,d,i)) = c 
+	  	[e_st' a,
+		 eql,
+		 "insertvalue ",
+		 e_ty t, " ",
+		 e_st' b,
+		 sep,
+		 e_st d,
+		 sep,
+		 Int.toString i]
 	  | e_ir (UnconvertedExp e) = "; Unconverted: " ^ PrettyPrint.ppexp e
 	  | e_ir _ = ";<<<<UNIMPLEMENTED>>>>"
 
