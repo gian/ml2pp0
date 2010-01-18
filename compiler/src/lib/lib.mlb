@@ -2,3 +2,4 @@ lib/set.sml
 lib/table.sig
 lib/table.sml
 lib/symbol.sml
+lib/cvc3/cvc3.sml

@@ -314,42 +314,6 @@ struct
 		in
 			(length consts > 0, const_cv, ins @ consts' @ binds')
 		end
-	(*and trans_match inp out (Node (ConstPat,_,_,[exp])) body =
-		let
-			val (te,ip) = trans_e exp
-			val nm = label () (* Next match label (F) *)
-			val tm = label () (* This match label (T) *)
-			val cv = unique_register (BoolTy)
-			val (rt,ip2) = trans_e body
-		in
-			ip @ [ICMP (cv, "ne", inp, te), 
-				  CBR (cv, nm, tm),
-				  LABEL tm] @
-				  ip2 @
-				  [STORE (out,rt)] @
-				  [BR 1] @
-				  [LABEL nm]
-		end
-	  | trans_match inp out (exp as Node (VarPat s,_,_,[])) body =
-		let
-			val _ = print ("trans_match: "^ PrettyPrint.ppexp exp^"\n")
-			val (te,ip) = trans_e exp
-			val nm = label () (* Next match label *)
-			val (rt,ip2) = trans_e body
-		in
-			ip @ 
-			[MOV (te,inp)] @
-			ip2 @
-			[STORE (out,rt)] @
-				  [BR 1] @
-				  [LABEL nm]
-		end
-	  | trans_match inp out (Node (TuplePat, SOME t, _, ch)) body =
-	  	let
-
-		in
-
-		end*)
 
 	and trans_builtin'' r tm1 tm2 "+" = [ADD (r,tm1,tm2)]
 	  | trans_builtin'' r tm1 tm2 "-" = [SUB (r,tm1,tm2)]
