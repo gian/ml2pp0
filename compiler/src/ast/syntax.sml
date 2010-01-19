@@ -7,6 +7,8 @@ struct
 			SyntaxOperatorUnflatten.translate ()),
 		("SyntaxSingleApp",
 			SyntaxSingleApp.translate ()),
+		("SyntaxTypeConv",
+			SyntaxTypeConv.translate ()),
 		("SyntaxFundecAnon",
 			SyntaxFundecAnon.translate ()),
 		("SyntaxPopulateSymtabs",

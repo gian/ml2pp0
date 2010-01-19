@@ -7,6 +7,7 @@ ast/syntax_pass.sig
 ast/syntax_operator_unflatten.sml
 ast/syntax_populate_symtabs.sml
 ast/syntax_single_app.sml
+ast/syntax_type_conv.sml
 ast/syntax_fundec_anon.sml
 ast/syntax_collapse_decs.sml
 ast/syntax_closure_conv.sml

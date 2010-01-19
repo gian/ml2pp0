@@ -33,12 +33,16 @@ struct
 	  | ast_map_dec f (fd as FixDec (fixity,ops,symtab)) =
 	  	(#decfun f) fd
 	  | ast_map_dec f x = (#decfun f) x
-	and ast_map_exp f (n as Node (nv,t,s,ch)) = (#expfun f) (Node (nv,t,s,map (ast_map_exp f) ch))
+	and ast_map_exp f (Node (Constraint t,x,s,ch)) = 
+			(#expfun f) (Node (Constraint (ast_map_ty f t), ast_map_ty' f x,s, map (ast_map_exp f) ch))
+	  | ast_map_exp f (Node (ConstraintPat t,x,s,ch)) =
+			(#expfun f) (Node (ConstraintPat (ast_map_ty f t), ast_map_ty' f x,s, map (ast_map_exp f) ch))
+	  | ast_map_exp f (n as Node (nv,t,s,ch)) = (#expfun f) (Node (nv,ast_map_ty' f t,s,map (ast_map_exp f) ch))
 	and ast_map_match f x = x
 	and ast_map_clauses f c = (#clausesfun f) (map (ast_map_clause f) c)
 	and ast_map_clause f {pats,resultType,body} =
 		(#clausefun f) {pats=map (ast_map_exp f) pats,
-						resultType=resultType,
+						resultType=ast_map_ty' f resultType,
 						body=ast_map_exp f body}
 	and ast_map_binds f x = map (ast_map_bind f) x
 	and ast_map_bind f (ValBind (p,e)) = (#bindfun f) 
@@ -48,6 +52,22 @@ struct
 	  	(#bindfun f) (ValRecBind (ast_map_exp f p,
 								  map (ast_map_exp f) m))
 	  | ast_map_bind f x = (#bindfun f) x
+	and ast_map_ty f (TupleTy t) = 
+	  		((#tyfun f) (TupleTy (map (ast_map_ty f) t)))
+	  | ast_map_ty f (ArrowTy (t1,t2)) = 
+	  		((#tyfun f) (ArrowTy (ast_map_ty f t1,ast_map_ty f t2)))
+	  | ast_map_ty f (ListTy t) = 
+	  		((#tyfun f) (ListTy (ast_map_ty f t)))
+	  | ast_map_ty f (TyConTy (t1,t2)) = 
+	  		((#tyfun f) (TyConTy 
+				(ast_map_ty f t1,map (ast_map_ty f) t2)))
+	  | ast_map_ty f (VectorTy t) =
+	  		(#tyfun f) (VectorTy (ast_map_ty f t))
+	  | ast_map_ty f (DepTy (t,e)) =
+	  		(#tyfun f) (DepTy (ast_map_ty f t, ast_map_exp f e))
+	  | ast_map_ty f t = (#tyfun f) t
+	and ast_map_ty' f NONE = NONE
+	  | ast_map_ty' f (SOME t) = SOME (ast_map_ty f t)
 	and ast_map_symtab f st =
 		let
 			val {venv,tenv,iter_order} = !st
@@ -57,7 +77,7 @@ struct
 			fun upd env NONE _ = 
 				raise Fail "[BUG] ast_map_symtab updates unknown symbol"
 			  | upd env (SOME s) (t,SOME e) = 
-			  		Symtab.insert_v st s (t, SOME (ast_map_exp f e))
+			  		Symtab.insert_v st s (ast_map_ty' f t, SOME (ast_map_exp f e))
 			  | upd env _ _ = ()
 
 			val vkeys = Symbol.keys (!venv)

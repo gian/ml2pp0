@@ -83,7 +83,8 @@ struct
 		  | RealTy
 		  | CharTy
 		  | WordTy
-		  | VectorTy of ty * ast
+		  | VectorTy of ty
+		  | DepTy of ty * ast
 		  | UVar of int
 		  | PolyTy of int
 		 and opr =

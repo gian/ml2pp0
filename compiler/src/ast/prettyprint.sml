@@ -92,7 +92,7 @@ struct
 	  | ppty (RecordTy l) = 
 	  	"{" ^ (String.concatWith ", " 
 			(map (fn (x,y) => ppexp x ^ " : " ^ ppty y) l)) ^ "}"
-	  | ppty UnitTy = "unit"
+	  | ppty UnitTy = "_unit"
 	  | ppty (TyConTy (t,[])) = ppty t
 	  | ppty (TyConTy (t,t')) = 
 	  	"(" ^ (String.concatWith "," (map ppty t')) ^ ") " ^ ppty t
@@ -106,7 +106,8 @@ struct
 	  | ppty RealTy = "real"
 	  | ppty CharTy = "char"
 	  | ppty WordTy = "word"
-	  | ppty (VectorTy (t,e)) = ppty t ^ " vector<" ^ ppexp e ^ ">"
+	  | ppty (DepTy (t,e)) = ppty t ^ "!" ^ ppexp e
+	  | ppty (VectorTy t) = ppty t ^ " vector"
 	  | ppty _ = "<unpretty-printed ty>"
 	and ppopr BOr = "orelse"
 	  | ppopr BAnd = "andalso"

@@ -111,7 +111,7 @@ fun word (yytext, drop, source, yypos, radix) =
 %header (functor MLLexFun (structure Tokens : ML_TOKENS));
 alphanum=[A-Za-z'_0-9]*;
 alphanumId=[A-Za-z]{alphanum};
-sym=[-!%&$+/:<=>?@~`^|#*]|"\\";
+sym=[-%&$+/:<=>?@~`^|#*]|"\\";
 symId={sym}+;
 id={alphanumId}|{symId};
 longid={id}("."{id})*;
@@ -161,6 +161,7 @@ hexnum={hexDigit}+;
 <INITIAL>"|" => (tok (Tokens.BAR, source, yypos, yypos + 1));
 <INITIAL>":" => (tok (Tokens.COLON, source, yypos, yypos + 1));
 <INITIAL>":>" => (tok (Tokens.COLONGT, source, yypos, yypos + 1));
+<INITIAL>"!"	=> (tok (Tokens.BANG, source, yypos, yypos + 1));
 <INITIAL>"=" => (tok (Tokens.EQUALOP, source, yypos, yypos + 1));
 <INITIAL>"#" => (tok (Tokens.HASH, source, yypos, yypos + 1));
 <INITIAL>"->" => (tok (Tokens.ARROW, source, yypos, yypos + 2));

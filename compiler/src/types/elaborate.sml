@@ -47,8 +47,9 @@ struct
 		(venv := substinconstr (PolyTy x) tyS (!venv); tyS)
 	  | inst tyS (ArrowTy (t1,t2)) = ArrowTy (inst tyS t1, inst tyS t2)
 	  | inst tyS (ListTy s) = ListTy (inst tyS s)
-	  | inst tyS (VectorTy (t,x)) = VectorTy (inst tyS t, x)
+	  | inst tyS (VectorTy (t)) = VectorTy (inst tyS t)
 	  | inst tyS (TupleTy l) = TupleTy (map (inst tyS) l)
+	  | inst tyS (DepTy (t,e)) = DepTy (inst tyS t,e)
 	  | inst tyS x = x
 
 	and set_ty (Node (e, _, st, c)) t = (t, Node(e, SOME t, st, c))
@@ -65,7 +66,14 @@ struct
 			val (t',e') = constr_e e
 			val _ = add_vconstr (t', t)
 		in
-			(t', Node (Constraint t, SOME t, st, [e']))
+			(t', e')
+		end
+	  | constr_e (n as Node (ConstraintPat t, _, st, [e])) =
+	  	let
+			val (t',e') = constr_e e
+			val _ = add_vconstr (t', t)
+		in
+			(t', e')
 		end
 	  | constr_e (n as Node (Case, _, st, body)) =
 	  	let
@@ -120,20 +128,17 @@ struct
 		in
 			(t',Node (List, SOME t', st, exps))
 		end
-	  | constr_e (n as Node (Vector, _, st, es)) =
-	  		raise Fail "Vector constr_e not implemented"
-	  	(*	VectorTy (
-				List.foldl (fn (a,b) =>
-				let
-					val rx = fresh_ty ()
-					val a' = constr_e a
-					val _ = add_vconstr (b, rx)
-					val _ = add_vconstr (rx, a')
-				in
-					rx
-				end) (fresh_ty ()) es,
-				Node (Int (length es),SOME IntTy,st,[])
-			)*)
+	  | constr_e (Node (Vector, _, st, es)) =
+	  	let
+			val es' = map constr_e es
+			val (types,exps) = ListPair.unzip es'
+			val r = fresh_ty ()
+			val _ = List.foldl (fn (a,b) => 
+									(add_vconstr (b, a); a)) r types
+			val t' = DepTy (VectorTy r,Node(Int (length es'), NONE, st, []))
+		in
+			(t',Node (Vector, SOME t', st, exps))
+		end
 	  | constr_e (Node (Var s, _, st, ch)) =
 	  	let
 			val t' = (case Symtab.lookup_v st s of
@@ -300,6 +305,8 @@ struct
 				    | (UVar n) => if n = x1 then tyT else (UVar n)
 					| (ListTy l) => ListTy (f l)
 					| (TupleTy l) => TupleTy (map f l)
+					| (VectorTy l) => VectorTy (f l)
+					| (DepTy (l,e)) => DepTy (f l, e)
 					| x => x)
      	in
         	f tyS
@@ -311,6 +318,8 @@ struct
                     | (ListTy l) => ListTy (f l)
 					| (PolyTy n) => if n = x1 then tyT else (PolyTy n)
 					| (TupleTy l) => TupleTy (map f l)
+					| (VectorTy l) => VectorTy (f l)
+					| (DepTy (l,e)) => DepTy (f l, e)
 					| x => x)
 		in
         	f tyS
@@ -405,6 +414,9 @@ struct
 		let
 			fun oc tyT = (case tyT of
 				ArrowTy(tyT1,tyT2) => oc tyT1 orelse oc tyT2
+			  | ListTy tyT1 => oc tyT1
+			  | VectorTy tyT1 => oc tyT1
+			  | DepTy (tyT1,_) => oc tyT1
 			  | UVar x => (x = tyX)
 			  | _ => false)
      in
@@ -431,8 +443,17 @@ struct
 	 | unify ((RealTy, RealTy) :: rest) = unify rest
 	 | unify ((CharTy, CharTy) :: rest) = unify rest
 	 | unify ((WordTy, WordTy) :: rest) = unify rest
-	 | unify ((VectorTy (t1,v1), VectorTy (t2,v2)) :: rest) = 
+     | unify ((VectorTy t1, VectorTy t2) :: rest) = 
 	 	unify ((t1,t2) :: rest)
+	 | unify ((DepTy (t1,e1), DepTy (t2,e2)) :: rest) =
+	 	let
+			val _ = print "DEPENDENT\n"
+		in
+	 	if Dependent.equal (e1,e2) then unify ((t1,t2) :: rest)
+		else raise Fail ("Type value expressions failed to unify: " ^
+					PrettyPrint.ppexp e1 ^ " cannot be shown to equal " ^
+					PrettyPrint.ppexp e2)
+		end
      | unify ((ArrowTy(tyS1,tyS2),ArrowTy(tyT1,tyT2)) :: rest) =
         unify ((tyS1,tyT1) :: (tyS2,tyT2) :: rest)
 	 | unify ((ListTy tyS1, ListTy tyS2) :: rest) =
@@ -458,6 +479,8 @@ struct
 			  | collect_tyvars (ArrowTy (t1,t2)) =
 			  		collect_tyvars t1 @ collect_tyvars t2
 			  | collect_tyvars (ListTy x) = collect_tyvars x
+			  | collect_tyvars (VectorTy x) = collect_tyvars x
+			  | collect_tyvars (DepTy (x,_)) = collect_tyvars x
 			  | collect_tyvars (TupleTy x) = 
 			  		List.foldl (fn (a,b) => b @ collect_tyvars a) [] x
 			  | collect_tyvars x = []

@@ -44,7 +44,7 @@ fun sym x = Symbol.fromString x
       (* Extensions *)
     | BUILD_CONST | COMMAND_LINE_CONST | CONST 
     | ADDRESS | EXPORT | IMPORT | SYMBOL 
-    | PRIM
+    | PRIM | BANG
 
 %nonterm
          aexp of A.ast
@@ -494,6 +494,7 @@ app_exp1 :         ([])
 
 aexp    : OP longvid            (mkNode (A.Op longvid,[]))
         | const                 (const)
+		| HASH LBRACKET exp_list RBRACKET (mkNode (A.Vector, exp_list))
         | HASH field            (mkNode (A.Selector, [field]))
         | LBRACE elabels RBRACE (mkNode (A.Record, elabels))
         | LBRACE RBRACE         (mkNode (A.Unit,[]))
@@ -585,6 +586,7 @@ ty : tynode (tynode)
 
 tynode  : tuple_ty      (A.TupleTy (tuple_ty))
         | ty ARROW ty   (A.ArrowTy (ty1, ty2))
+		| ty BANG exp	(A.DepTy (ty,exp))
         | ty'node       (ty'node)
 
 ty' : ty'node (ty'node)
@@ -662,7 +664,7 @@ field : id                     (mkNode (A.Var id,[]))
                                     else
                                        int - 1), []))
 
-longtycon : longidNoAsterisk 	(A.VarTy longidNoAsterisk) 
+longtycon : longidNoAsterisk 	(A.VarTy longidNoAsterisk)
 longvid : longidEqual      		(longidEqual) 
 longvidNoEqual : longid    		(longid) 
 longcon : longid           		(longid) 

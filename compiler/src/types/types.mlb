@@ -1,2 +1,3 @@
 types/types.sml
+types/dependent.sml
 types/elaborate.sml

@@ -10,11 +10,11 @@ LLC="llc -O3"
 CC=gcc
 LLVMOPT="cat"
 
-$BIN/ml2pp0 $1
-cat $1.ll $LIB/decs.ll >> $TMPPRE.ll
-$LLVMAS $TMPPRE.ll
-$LLVMOPT $TMPPRE.bc > $TMPPRE.opt.bc
-$LLC $TMPPRE.opt.bc
+$BIN/ml2pp0 $1 && \
+cat $1.ll $LIB/decs.ll >> $TMPPRE.ll && \
+$LLVMAS $TMPPRE.ll && \
+$LLVMOPT $TMPPRE.bc > $TMPPRE.opt.bc && \
+$LLC $TMPPRE.opt.bc && \
 $CC -o $NAME $TMPPRE.opt.s $LIB/basis.o
 
 echo "% Compilation finished:"

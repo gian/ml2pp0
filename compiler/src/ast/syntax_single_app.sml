@@ -8,6 +8,8 @@ struct
 
 	fun single_app (A.Node(A.App,_,_,[e])) = e
 	  | single_app (A.Node(A.AppPat,_,_,[p])) = p
+	  | single_app (A.Node(A.Tuple,_,_,[p])) = p
+	  | single_app (A.Node(A.TuplePat,_,_,[p])) = p
 	  | single_app k = k
 
 	fun translate _ prog =
