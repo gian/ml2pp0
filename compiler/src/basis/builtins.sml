@@ -1,43 +1,81 @@
 structure BuiltIns =
 struct
 
+	structure A = Ast
+
 	fun builtin s t1 t2 = Symtab.insert_v Symtab.basis
 		(Symbol.fromString s)
-		(SOME (Ast.ArrowTy(t1,t2)), 
-		 SOME (Ast.Node(
-		 		Ast.BuiltIn
-					(s,Ast.ArrowTy (t1,t2)),NONE,Symtab.basis,[])))
+		(SOME (A.ArrowTy(t1,t2)), 
+		 SOME (A.Node(
+		 		A.BuiltIn
+					(s,A.ArrowTy (t1,t2)),NONE,Symtab.basis,[])))
 
 	fun builtin_c s t1 v = Symtab.insert_v Symtab.basis 
 		(Symbol.fromString s)
 		(SOME t1, SOME v)
 
+	fun mkDep (t,e) = A.DepTy (t, e)
+
 	val _ = (builtin "puts" Types.tyString Types.tyInt)
-	val _ = (builtin "hd" (Ast.ListTy (Ast.PolyTy 0)) (Ast.PolyTy 0))
-	val _ = (builtin "tl" (Ast.ListTy (Ast.PolyTy 0)) 
-								(Ast.ListTy (Ast.PolyTy 0)))
-	val _ = (builtin_c "nil" (Ast.ListTy (Ast.PolyTy 0)) 
-							 	(Ast.Node (Ast.List,
-									SOME (Ast.ListTy (Ast.PolyTy 0)),
+	val _ = (builtin "hd" (mkDep (A.ListTy (A.PolyTy 0), 
+								  A.Node (A.Int 1,
+								  			NONE,
+											Symtab.top_level,
+											[]))) (A.PolyTy 0))
+	val _ = (builtin "tl" (mkDep(A.ListTy (A.PolyTy 0),
+							A.Node (A.Var (Symbol.fromString "n"),
+											   SOME A.IntTy,
+											   Symtab.top_level,
+											   [])
+		
+							))
+
+							(mkDep(A.ListTy (A.PolyTy 0),
+							A.Node (A.App,
+									SOME A.IntTy,
+									Symtab.top_level,
+									[
+										A.Node(A.Var (Symbol.fromString "-"),
+											   NONE,
+											   Symtab.basis,
+											   []),
+										A.Node(A.Tuple,
+											   SOME (A.TupleTy [A.IntTy,A.IntTy]),
+											   Symtab.top_level,
+											   [
+												A.Node(A.Var (Symbol.fromString "n"),
+											   		   SOME A.IntTy,
+											   		   Symtab.top_level,
+											   		   []),
+												A.Node(A.Int 1,
+											   		   SOME A.IntTy,
+											           Symtab.top_level,
+											   		   [])
+											   ])
+									])
+							))) 
+	val _ = (builtin_c "nil" (A.ListTy (A.PolyTy 0)) 
+							 	(A.Node (A.List,
+									SOME (A.ListTy (A.PolyTy 0)),
 									Symtab.basis, [])))
 	val _ = builtin "print_int" Types.tyInt Types.tyInt
-	val _ = builtin "input_int" Ast.IntTy Ast.IntTy
+	val _ = builtin "input_int" A.IntTy A.IntTy
 	val _ = builtin "print" Types.tyString Types.tyInt
 
 	fun builtin_binop s a b c =
 		builtin s 
-			(Ast.TupleTy [a,b])
+			(A.TupleTy [a,b])
 			c
 
-	val _ = builtin_binop "=" (Ast.PolyTy 0) (Ast.PolyTy 0) Ast.BoolTy 
-	val _ = builtin_binop "+" Ast.IntTy Ast.IntTy Ast.IntTy 
-	val _ = builtin_binop "-" Ast.IntTy Ast.IntTy Ast.IntTy 
-	val _ = builtin_binop "*" Ast.IntTy Ast.IntTy Ast.IntTy 
-	val _ = builtin_binop "div" Ast.IntTy Ast.IntTy Ast.IntTy 
-	val _ = builtin_binop "mod" Ast.IntTy Ast.IntTy Ast.IntTy 
-	val _ = builtin_binop "<" Ast.IntTy Ast.IntTy Ast.BoolTy 
-	val _ = builtin_binop ">" Ast.IntTy Ast.IntTy Ast.BoolTy 
-	val _ = builtin_binop "<>" Ast.IntTy Ast.IntTy Ast.BoolTy 
-	val _ = builtin_binop ">=" Ast.IntTy Ast.IntTy Ast.BoolTy 
-	val _ = builtin_binop "<=" Ast.IntTy Ast.IntTy Ast.BoolTy 
+	val _ = builtin_binop "=" (A.PolyTy 0) (A.PolyTy 0) A.BoolTy 
+	val _ = builtin_binop "+" A.IntTy A.IntTy A.IntTy 
+	val _ = builtin_binop "-" A.IntTy A.IntTy A.IntTy 
+	val _ = builtin_binop "*" A.IntTy A.IntTy A.IntTy 
+	val _ = builtin_binop "div" A.IntTy A.IntTy A.IntTy 
+	val _ = builtin_binop "mod" A.IntTy A.IntTy A.IntTy 
+	val _ = builtin_binop "<" A.IntTy A.IntTy A.BoolTy 
+	val _ = builtin_binop ">" A.IntTy A.IntTy A.BoolTy 
+	val _ = builtin_binop "<>" A.IntTy A.IntTy A.BoolTy 
+	val _ = builtin_binop ">=" A.IntTy A.IntTy A.BoolTy 
+	val _ = builtin_binop "<=" A.IntTy A.IntTy A.BoolTy 
 end

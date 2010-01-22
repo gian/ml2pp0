@@ -54,6 +54,9 @@ struct
 
 	and set_ty (Node (e, _, st, c)) t = (t, Node(e, SOME t, st, c))
 
+	and get_dep (DepTy (t,e)) = e
+	  | get_dep x = Node (Int 1, SOME IntTy, Symtab.top_level, [])
+
 	and constr_e (n as Node (Int v, _, st, c)) = set_ty n IntTy
 	  | constr_e (n as Node (String _, _, _, _)) = set_ty n StringTy
 	  | constr_e (n as Node (Word _, _, _, _)) = set_ty n WordTy
@@ -124,7 +127,7 @@ struct
 			val r = fresh_ty ()
 			val _ = List.foldl (fn (a,b) => 
 									(add_vconstr (b, a); a)) r types
-			val t' = ListTy r
+			val t' = DepTy (ListTy r,Node(Int (length es'), NONE, st, []))
 		in
 			(t',Node (List, SOME t', st, exps))
 		end
@@ -153,11 +156,15 @@ struct
 		in
 			(t', Node (Var s, SOME t', st, ch))
 		end
-
 	  | constr_e (Node (App, _, st, [tm1,tm2])) =
 		let
 			val (t1',tm1') = constr_e tm1
 			val t1 = inst (fresh_ty()) t1'
+
+			val (d1,d2) = (case t1 of ArrowTy (p,q) =>
+								(get_dep p, get_dep q)
+							  | e => raise Fail ("Application of non-arrow type! "
+							  					 ^ PrettyPrint.ppty e))
 
 			val _ = print ("t1': " ^ PrettyPrint.ppty t1' ^ "\n")
 			val _ = print ("t1: " ^ PrettyPrint.ppty t1 ^ "\n")
@@ -165,6 +172,12 @@ struct
 			val (t2,tm2') = constr_e tm2
 			val tx = fresh_ty ()
 			
+			val d3 = get_dep t2
+
+			val _ = print ("d1: " ^ PrettyPrint.ppexp d1 ^ "\n")
+			val _ = print ("d2: " ^ PrettyPrint.ppexp d2 ^ "\n")
+			val _ = print ("d3: " ^ PrettyPrint.ppexp d3 ^ "\n")
+
 			val _ = print ("t2: " ^ PrettyPrint.ppty t2 ^ "\n")
  
 			val _ = add_vconstr (t1,ArrowTy(t2,tx))
