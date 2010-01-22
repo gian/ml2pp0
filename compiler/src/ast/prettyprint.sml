@@ -106,9 +106,15 @@ struct
 	  | ppty RealTy = "real"
 	  | ppty CharTy = "char"
 	  | ppty WordTy = "word"
-	  | ppty (DepTy (t,e)) = ppty t ^ "!" ^ ppexp e
+	  | ppty (DepTy (t,e)) = ppty t ^ "!" ^ ppexp' e
 	  | ppty (VectorTy t) = ppty t ^ " vector"
 	  | ppty _ = "<unpretty-printed ty>"
+	and ppexp' (Node (Int i, _, _, _)) = Int.toString i
+	  | ppexp' (Node (Var i, _, _, _)) = Symbol.toString i
+	  | ppexp' (Node (App,_,_,[t1,t2])) = ppexp' t1 ^ ppexp' t2
+	  | ppexp' (Node (Tuple,_,_,ch)) = "(" ^ String.concatWith "," (
+	  										map ppexp' ch) ^ ")"
+	  | ppexp' e = raise Fail ("Invalid dependent type term: " ^ ppexp e)
 	and ppopr BOr = "orelse"
 	  | ppopr BAnd = "andalso"
 	  | ppopr Plus = "+"

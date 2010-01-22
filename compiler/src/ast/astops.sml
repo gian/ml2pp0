@@ -106,4 +106,23 @@ struct
 	  | ty_eq (UVar i) (UVar j) = i = j
 	  | ty_eq _ _ = false
 
+	fun substinexp (Var x) haystack subst = 
+		let
+			fun ef (n as Node (Var y, _, _, _)) = if x = y then subst else n
+			  | ef x = x
+
+			fun id x = x
+
+			val f = {decfun = id,
+					 expfun = ef,
+					 bindfun = id,
+					 tyfun = id,
+					 oprfun = id,
+					 clausesfun = id,
+					 clausefun = id}
+		in
+			ast_map_exp f haystack
+		end
+
+
 end

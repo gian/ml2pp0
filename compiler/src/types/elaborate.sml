@@ -174,12 +174,15 @@ struct
 			
 			val d3 = get_dep t2
 
-			val _ = print ("d1: " ^ PrettyPrint.ppexp d1 ^ "\n")
-			val _ = print ("d2: " ^ PrettyPrint.ppexp d2 ^ "\n")
-			val _ = print ("d3: " ^ PrettyPrint.ppexp d3 ^ "\n")
+			val _ = print ("d1: " ^ PrettyPrint.ppexp' d1 ^ "\n")
+			val _ = print ("d2: " ^ PrettyPrint.ppexp' d2 ^ "\n")
+			val _ = print ("d3: " ^ PrettyPrint.ppexp' d3 ^ "\n")
 
 			val _ = print ("t2: " ^ PrettyPrint.ppty t2 ^ "\n")
- 
+
+			val dt = DepTy(ArrowTy(t2,tx), constr_d d1 d2 d3)
+			val _ = print ("dt: " ^ PrettyPrint.ppty dt ^ "\n")
+
 			val _ = add_vconstr (t1,ArrowTy(t2,tx))
 		in
 			(tx, Node (App, SOME tx, st, [tm1',tm2']))
@@ -265,6 +268,26 @@ struct
 			((pt,p'),(et,e'))
 		end
 	  | constr_m _ = raise Fail "constr_m applied to non-match"
+
+	(* Build a dependent type constraint.
+		(p!x -> q!y) r!z *)
+	and constr_d (Node (Var s, _, _, _)) y z =
+		let
+			(* Substitute s in y for z *)
+			val t = substinexp (Var s) y z
+		in
+			t
+		end
+	  | constr_d (x as Node (Int i, _, _, _)) y z =
+	  	let
+			val t = Dependent.equal (x,z) 	
+		in
+			y
+		end
+	  | constr_d x y z = raise Fail ("Unimplemented constr_d:\n" ^
+	  							PrettyPrint.ppexp x ^ "\n" ^
+								PrettyPrint.ppexp y ^ "\n" ^ 
+								PrettyPrint.ppexp z) 
 
 	and constr symtab = 
 		let
@@ -467,6 +490,10 @@ struct
 					PrettyPrint.ppexp e1 ^ " cannot be shown to equal " ^
 					PrettyPrint.ppexp e2)
 		end
+     | unify ((DepTy(tyS1,Node(Int 1,_,_,_)), tyS2) :: rest) =
+	 	unify ((tyS1,tyS2) :: rest)
+     | unify ((tyS1, DepTy(tyS2,Node(Int 1,_,_,_))) :: rest) =
+	 	unify ((tyS1,tyS2) :: rest)
      | unify ((ArrowTy(tyS1,tyS2),ArrowTy(tyT1,tyT2)) :: rest) =
         unify ((tyS1,tyT1) :: (tyS2,tyT2) :: rest)
 	 | unify ((ListTy tyS1, ListTy tyS2) :: rest) =
