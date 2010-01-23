@@ -35,9 +35,11 @@ struct
 		val _ = Elaborate.print_constr (!Elaborate.venv) 
 		val _ = print "\n"
 		val _ = Elaborate.unify_constraints ()
-
 		val _ = print "SCOPE DUMP CONSTRAINED:\n"
 		val _ = Symtab.print_scope (Symtab.top_level)
+
+
+		val _ = Dependent.check (Symtab.top_level)
 
 (*		val _ = Optimiser.runAllPasses Symtab.top_level 
 		val _ = print "SCOPE DUMP (post-Optimiser):\n"
