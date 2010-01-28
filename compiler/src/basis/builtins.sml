@@ -67,6 +67,9 @@ struct
 			(A.TupleTy [a,b])
 			c
 
+	fun var_node s = 
+		A.Node(A.Var (Symbol.fromString s), SOME A.IntTy, Symtab.top_level, [])
+
 	val _ = builtin_binop "=" (A.PolyTy 0) (A.PolyTy 0) A.BoolTy 
 	val _ = builtin_binop "+" A.IntTy A.IntTy A.IntTy 
 	val _ = builtin_binop "-" A.IntTy A.IntTy A.IntTy 
@@ -78,4 +81,53 @@ struct
 	val _ = builtin_binop "<>" A.IntTy A.IntTy A.BoolTy 
 	val _ = builtin_binop ">=" A.IntTy A.IntTy A.BoolTy 
 	val _ = builtin_binop "<=" A.IntTy A.IntTy A.BoolTy 
+	val _ = builtin_binop "@" (A.DepTy(A.ListTy (A.PolyTy 0), var_node "n"))
+							   (A.DepTy(A.ListTy (A.PolyTy 0), var_node "m"))
+							   (A.DepTy(A.ListTy (A.PolyTy 0), 
+									A.Node (A.App,
+									SOME A.IntTy,
+									Symtab.top_level,
+									[
+										A.Node(A.Var (Symbol.fromString "+"),
+											   NONE,
+											   Symtab.basis,
+											   []),
+										A.Node(A.Tuple,
+											   SOME (A.TupleTy [A.IntTy,A.IntTy]),
+											   Symtab.top_level,
+											   [
+											   	var_node "n",
+											    var_node "m"
+											   ])
+									]))
+								)
+
+
+								
+	val _ = builtin_binop "::" (A.PolyTy 0) 
+							   (A.DepTy(A.ListTy (A.PolyTy 0), var_node "n"))
+							   (A.DepTy(A.ListTy (A.PolyTy 0),
+								A.Node (A.App,
+									SOME A.IntTy,
+									Symtab.top_level,
+									[
+										A.Node(A.Var (Symbol.fromString "+"),
+											   NONE,
+											   Symtab.basis,
+											   []),
+										A.Node(A.Tuple,
+											   SOME (A.TupleTy [A.IntTy,A.IntTy]),
+											   Symtab.top_level,
+											   [
+												A.Node(A.Var (Symbol.fromString "n"),
+											   		   SOME A.IntTy,
+											   		   Symtab.top_level,
+											   		   []),
+												A.Node(A.Int 1,
+											   		   SOME A.IntTy,
+											           Symtab.top_level,
+											   		   [])
+											   ])
+									])
+							))
 end
