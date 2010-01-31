@@ -14,6 +14,7 @@ struct
 				   | Label of int
 				   | BuiltInName of string * Ast.ty
 				   | Composite of store list
+				   | Vector of int * Ast.ty
 				   | Ptr of symbol * Ast.ty
 				   | Undef
 				   | Null
@@ -213,6 +214,12 @@ struct
 			 [PHI (phi,t,(tbr',tlab),(fbr',flab))]
 			)
 		end
+	  | trans_e (Node (Ast.Vector,SOME t,st,els)) =
+	  	let
+			val _ = ()
+		in
+			(unique_register (t), [])
+		end
 	  | trans_e (Node (Fn,_,_,_)) = 
 	  		raise Fail "[BUG] Non closure-converted function in trans_e"
 	  | trans_e n = (Label 0, [UnconvertedExp n])
@@ -320,6 +327,7 @@ struct
 	  | trans_builtin'' r tm1 tm2 "*" = [MUL (r,tm1,tm2)]
 	  | trans_builtin'' r tm1 tm2 "div" = [DIV (r,tm1,tm2)]
 	  | trans_builtin'' r tm1 tm2 "=" = [ICMP (r,"eq",tm1,tm2)]
+	  | trans_builtin'' r tm1 tm2 ":::" = []
 	  | trans_builtin'' r tm1 tm2 "<=" = [ICMP (r,"sle",tm1,tm2)]
 	  | trans_builtin'' r tm1 tm2 ">=" = [ICMP (r,"sge",tm1,tm2)]
 	  | trans_builtin'' r tm1 tm2 "<" = [ICMP (r,"slt",tm1,tm2)]

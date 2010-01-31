@@ -13,6 +13,11 @@ struct
 		clausefun : clause -> clause
 	}
 
+	val indepty = ref true
+
+	fun enterDependentTypes () = indepty := true
+	fun noEnterDependentTypes () = indepty := false
+
 	fun ast_map_decs (f:ast_map_funs) x = 
 		map (fn k => (ast_map_dec f k)) x
 	and ast_map_dec (f:ast_map_funs) (ExpDec exp) = 
@@ -64,7 +69,8 @@ struct
 	  | ast_map_ty f (VectorTy t) =
 	  		(#tyfun f) (VectorTy (ast_map_ty f t))
 	  | ast_map_ty f (DepTy (t,e)) =
-	  		(#tyfun f) (DepTy (ast_map_ty f t, ast_map_exp f e))
+	  		(#tyfun f) (DepTy (ast_map_ty f t, 
+				if (!indepty) then ast_map_exp f e else e))
 	  | ast_map_ty f t = (#tyfun f) t
 	and ast_map_ty' f NONE = NONE
 	  | ast_map_ty' f (SOME t) = SOME (ast_map_ty f t)
